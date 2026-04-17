@@ -1,0 +1,120 @@
+/* Proviso APEX Custom Styles */
+
+:root {
+  --proviso-blue:    #4a90d9;
+  --proviso-dark:    #1a2332;
+  --proviso-accent:  #f5a623;
+  --proviso-success: #27ae60;
+  --proviso-error:   #e74c3c;
+}
+
+/* ── Page header ──────────────────────────────────────── */
+.proviso-header {
+  background: linear-gradient(135deg, var(--proviso-dark), #2c3e50);
+  color: #fff;
+  padding: 1.5rem 2rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+}
+
+.proviso-header h1 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.proviso-header .tagline {
+  font-size: 0.9rem;
+  opacity: 0.75;
+  margin-top: 0.25rem;
+}
+
+/* ── Monaco diff editor container ──────────────────────── */
+#diffEditorContainer {
+  width: 100%;
+  height: 480px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-top: 0.75rem;
+  overflow: hidden;
+}
+
+/* ── Mermaid diagram container ──────────────────────────── */
+#mermaidContainer {
+  background: #f8faff;
+  border: 1px solid var(--proviso-blue);
+  border-radius: 8px;
+  padding: 1rem;
+  min-height: 200px;
+  margin-top: 0.75rem;
+  overflow-x: auto;
+}
+
+/* ── Loading spinner ────────────────────────────────────── */
+#loadingSpinner {
+  display: none;
+  text-align: center;
+  padding: 2rem;
+  color: var(--proviso-blue);
+  font-size: 1.1rem;
+}
+
+#loadingSpinner::before {
+  content: "⏳ ";
+}
+
+/* ── Buttons ────────────────────────────────────────────── */
+.t-Button--proviso-primary {
+  background-color: var(--proviso-blue) !important;
+  border-color: var(--proviso-blue) !important;
+  color: #fff !important;
+}
+
+.t-Button--proviso-primary:hover {
+  background-color: #357abd !important;
+}
+
+/* ── Change summary area ────────────────────────────────── */
+#changeSummaryPanel {
+  background: #fffde7;
+  border-left: 4px solid var(--proviso-accent);
+  padding: 1rem;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.85rem;
+  white-space: pre-wrap;
+}
+
+/* ── Search results table ───────────────────────────────── */
+#searchResultsTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+#searchResultsTable th {
+  background: var(--proviso-dark);
+  color: #fff;
+  padding: 0.6rem 1rem;
+  text-align: left;
+}
+
+#searchResultsTable td {
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid #eee;
+}
+
+#searchResultsTable tr:hover td {
+  background: #f0f4ff;
+}
+
+/* ── Score badge ────────────────────────────────────────── */
+.score-badge {
+  display: inline-block;
+  background: var(--proviso-success);
+  color: #fff;
+  border-radius: 12px;
+  padding: 0.1rem 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
