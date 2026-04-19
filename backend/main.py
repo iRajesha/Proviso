@@ -2,7 +2,7 @@ import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from backend.config import settings
-from backend.routers import health, generate, review, scripts
+from backend.routers import health, generate, review, scripts, chat
 
 logging.basicConfig(level=settings.log_level)
 
@@ -24,3 +24,4 @@ app.include_router(health.router,   prefix="/api/v1", tags=["Health"])
 app.include_router(generate.router, prefix="/api/v1", tags=["Generation"])
 app.include_router(review.router,   prefix="/api/v1", tags=["Review"])
 app.include_router(scripts.router,  prefix="/api/v1", tags=["Scripts"])
+app.include_router(chat.router,     prefix="/api/v1", tags=["Chat"])

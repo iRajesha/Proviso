@@ -1,11 +1,17 @@
+import logging
 import uuid
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from backend.agents.crew import run_crew
+from backend.agents.crew import run_generate_only
 from backend.db.repositories import GenerationLogRepository
+from backend.services.requirements_guard import (
+    RequirementsNotClearError,
+    ensure_requirements_clarity,
+)
 
 router = APIRouter()
 _log_repo = GenerationLogRepository()
+_logger = logging.getLogger(__name__)
 
 
 class GenerateRequest(BaseModel):
@@ -27,27 +33,46 @@ async def generate(req: GenerateRequest):
     if not req.requirements.strip():
         raise HTTPException(status_code=400, detail="requirements cannot be empty")
 
-    session_id = str(uuid.uuid4())
-    result = run_crew(req.requirements, req.services)
+    try:
+        ensure_requirements_clarity(req.requirements, req.services)
+    except RequirementsNotClearError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "message": exc.message,
+                "missing_details": exc.missing_details,
+                "clarification_questions": exc.clarification_questions,
+            },
+        )
 
-    _log_repo.log(
-        session_id=session_id,
-        requirements=req.requirements,
-        services=req.services,
-        generated_terraform=result.generated_terraform,
-        reviewed_terraform=result.reviewed_terraform,
-        change_summary=result.change_summary,
-        cleanup_script=result.cleanup_script,
-    )
+    session_id = str(uuid.uuid4())
+    generated_terraform = run_generate_only(req.requirements, req.services)
+    reviewed_terraform = ""
+    change_summary = ""
+    cleanup_script = ""
+
+    # DB may not be ready during early integration; do not block LLM response.
+    try:
+        _log_repo.log(
+            session_id=session_id,
+            requirements=req.requirements,
+            services=req.services,
+            generated_terraform=generated_terraform,
+            reviewed_terraform=reviewed_terraform,
+            change_summary=change_summary,
+            cleanup_script=cleanup_script,
+        )
+    except Exception as exc:  # pragma: no cover - best-effort logging path
+        _logger.warning("Skipping generation log persistence: %s", exc)
 
     from backend.services.diagram_service import generate_mermaid_diagram
     diagram = generate_mermaid_diagram(req.services)
 
     return GenerateResponse(
         session_id=session_id,
-        generated_terraform=result.generated_terraform,
-        reviewed_terraform=result.reviewed_terraform,
-        change_summary=result.change_summary,
-        cleanup_script=result.cleanup_script,
+        generated_terraform=generated_terraform,
+        reviewed_terraform=reviewed_terraform,
+        change_summary=change_summary,
+        cleanup_script=cleanup_script,
         mermaid_diagram=diagram,
     )

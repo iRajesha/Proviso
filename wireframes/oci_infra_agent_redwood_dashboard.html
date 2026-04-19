@@ -1,0 +1,2234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OCI Infra Agent Workbench</title>
+  <style>
+    :root {
+      --redwood-bg: #f5f6f7;
+      --surface-0: #ffffff;
+      --surface-1: #fbfcfd;
+      --surface-2: #f0f2f5;
+      --surface-3: #e7ebf0;
+      --border: #d6dbe3;
+      --border-strong: #b8c2cf;
+      --text-1: #1b1f24;
+      --text-2: #4f5b67;
+      --text-3: #6d7885;
+      --brand: #c74634;
+      --brand-hover: #ad3d2d;
+      --brand-soft: #fdf0ee;
+      --info: #006fbf;
+      --info-soft: #eaf4fb;
+      --success: #2c7a47;
+      --success-soft: #edf8f1;
+      --warning: #a06112;
+      --warning-soft: #fff4e8;
+      --danger: #b42318;
+      --danger-soft: #fff1f0;
+      --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.05);
+      --shadow-md: 0 12px 28px rgba(16, 24, 40, 0.08);
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 18px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: "Oracle Sans", Inter, "Segoe UI", Arial, sans-serif;
+      background: var(--redwood-bg);
+      color: var(--text-1);
+      line-height: 1.45;
+    }
+
+    button, input, select, textarea {
+      font: inherit;
+    }
+
+    .app-shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      transition: grid-template-columns 0.22s ease;
+    }
+
+    .app-shell.sidebar-collapsed {
+      grid-template-columns: 88px 1fr;
+    }
+
+    .sidebar {
+      background: linear-gradient(180deg, #1f2630 0%, #2c3441 100%);
+      color: #fff;
+      padding: 22px 18px;
+      border-right: 1px solid #202833;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow: hidden;
+      transition: padding 0.22s ease;
+    }
+
+    .sidebar-toggle {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.16);
+      background: rgba(255,255,255,0.08);
+      color: #fff;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: 700;
+      transition: 0.18s ease;
+      margin-bottom: 6px;
+    }
+
+    .sidebar-toggle:hover {
+      background: rgba(255,255,255,0.14);
+      border-color: rgba(255,255,255,0.22);
+    }
+
+    .brand {
+      padding: 8px 10px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.12);
+    }
+
+    .brand .eyebrow {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #ffb2a8;
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+
+    .brand h1 {
+      margin: 0 0 8px;
+      font-size: 22px;
+      line-height: 1.2;
+      font-weight: 700;
+    }
+
+    .brand p {
+      margin: 0;
+      font-size: 13px;
+      color: #dbe3ec;
+    }
+
+    .nav-block-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #aeb9c7;
+      margin: 4px 10px 8px;
+      font-weight: 700;
+    }
+
+    .nav-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .nav-btn {
+      width: 100%;
+      text-align: left;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.04);
+      color: #edf2f7;
+      border-radius: 12px;
+      padding: 12px 14px;
+      cursor: pointer;
+      transition: 0.18s ease;
+    }
+
+    .nav-btn:hover {
+      background: rgba(255,255,255,0.08);
+      border-color: rgba(255,255,255,0.16);
+    }
+
+    .nav-btn.active {
+      background: #fff;
+      color: #161b22;
+      border-color: #fff;
+      box-shadow: var(--shadow-md);
+    }
+
+    .nav-btn .nav-title {
+      font-weight: 700;
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+
+
+    .app-shell.sidebar-collapsed .sidebar {
+      padding: 22px 12px;
+      align-items: center;
+    }
+
+    .app-shell.sidebar-collapsed .brand p,
+    .app-shell.sidebar-collapsed .brand .eyebrow,
+    .app-shell.sidebar-collapsed .nav-block-title,
+    .app-shell.sidebar-collapsed .nav-btn .nav-meta,
+    .app-shell.sidebar-collapsed .timeline-list,
+    .app-shell.sidebar-collapsed .side-card {
+      display: none;
+    }
+
+    .app-shell.sidebar-collapsed .brand {
+      padding: 8px 0 12px;
+      width: 100%;
+      text-align: center;
+    }
+
+    .app-shell.sidebar-collapsed .brand h1 {
+      font-size: 14px;
+      margin: 0;
+      line-height: 1.35;
+    }
+
+    .app-shell.sidebar-collapsed .nav-list {
+      width: 100%;
+    }
+
+    .app-shell.sidebar-collapsed .nav-btn {
+      padding: 12px 8px;
+      text-align: center;
+    }
+
+    .app-shell.sidebar-collapsed .nav-btn .nav-title {
+      font-size: 12px;
+      margin-bottom: 0;
+    }
+
+    .nav-btn .nav-meta {
+      font-size: 12px;
+      color: inherit;
+      opacity: 0.72;
+    }
+
+    .side-card {
+      margin-top: auto;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 16px;
+      padding: 14px;
+    }
+
+    .side-card h3 {
+      margin: 0 0 8px;
+      font-size: 14px;
+    }
+
+    .side-card p {
+      margin: 0 0 12px;
+      font-size: 12px;
+      color: #dce5ef;
+    }
+
+    .content-area {
+      min-width: 0;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: rgba(245,246,247,0.94);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 24px;
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .topbar-title h2 {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    .topbar-title p {
+      margin: 4px 0 0;
+      color: var(--text-2);
+      font-size: 13px;
+    }
+
+    .topbar-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .workspace {
+      padding: 24px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .page { display: none; }
+    .page.active { display: grid; gap: 18px; }
+
+    .card {
+      background: var(--surface-0);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 18px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: flex-start;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+
+    .card-header h3, .card h3 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .subtle {
+      color: var(--text-2);
+      font-size: 13px;
+      margin: 4px 0 0;
+    }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0,1fr));
+      gap: 14px;
+    }
+
+    .kpi {
+      background: linear-gradient(180deg, #fff 0%, #fbfbfc 100%);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+    }
+
+    .kpi-label {
+      font-size: 12px;
+      color: var(--text-3);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+
+    .kpi-value {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .kpi-foot {
+      font-size: 12px;
+      color: var(--text-2);
+    }
+
+    .grid-2 { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 18px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 14px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 14px; }
+
+    .btn-row, .toolbar-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .btn {
+      border-radius: 999px;
+      padding: 10px 16px;
+      border: 1px solid transparent;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: 0.18s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: var(--brand);
+      color: #fff;
+      border-color: var(--brand);
+    }
+
+    .btn-primary:hover { background: var(--brand-hover); border-color: var(--brand-hover); }
+
+    .btn-secondary {
+      background: var(--surface-0);
+      border-color: var(--border-strong);
+      color: var(--text-1);
+    }
+
+    .btn-secondary:hover {
+      background: var(--surface-2);
+    }
+
+    .btn-soft {
+      background: var(--brand-soft);
+      color: var(--brand);
+      border-color: #f7c8c1;
+    }
+
+    .btn-soft:hover { background: #fbe5e1; }
+
+    .ghost-link {
+      color: var(--info);
+      background: transparent;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .section-title {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+
+    .field-grid { display: grid; gap: 14px; }
+    .field-grid.two { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .field-grid.three { grid-template-columns: repeat(3, minmax(0,1fr)); }
+
+    .field {
+      display: grid;
+      gap: 6px;
+    }
+
+    .field label {
+      font-size: 12px;
+      color: var(--text-2);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      border: 1px solid var(--border-strong);
+      border-radius: 12px;
+      background: var(--surface-1);
+      color: var(--text-1);
+      padding: 12px 14px;
+      outline: none;
+      transition: 0.18s ease;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--info);
+      box-shadow: 0 0 0 4px rgba(0,111,191,0.12);
+      background: #fff;
+    }
+
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    #requirementText { min-height: 220px; }
+
+    .pill-row, .chip-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .pill {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 12px;
+      color: var(--text-2);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .pill button {
+      border: none;
+      background: transparent;
+      color: var(--text-3);
+      cursor: pointer;
+      padding: 0;
+      font-size: 12px;
+    }
+
+    .tag-picker button {
+      border: 1px dashed var(--border-strong);
+      background: #fff;
+      border-radius: 999px;
+      padding: 7px 12px;
+      font-size: 12px;
+      color: var(--text-2);
+      cursor: pointer;
+    }
+
+    .toggle-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      align-items: center;
+      padding: 12px 0 4px;
+    }
+
+    .toggle-row label, .check-list label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text-1);
+      font-weight: 600;
+    }
+
+    input[type="checkbox"], input[type="radio"] {
+      width: auto;
+      accent-color: var(--brand);
+    }
+
+    .status-banner {
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: var(--surface-1);
+      font-size: 13px;
+      color: var(--text-2);
+    }
+
+    .status-banner.info { background: var(--info-soft); border-color: #c8e1f1; color: #11425f; }
+    .status-banner.success { background: var(--success-soft); border-color: #c5e5cf; color: #1e5531; }
+    .status-banner.warning { background: var(--warning-soft); border-color: #efd6b4; color: #77460d; }
+
+    .split-workbench {
+      display: grid;
+      grid-template-columns: 420px minmax(460px, 1fr) 360px;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .sticky-col {
+      position: sticky;
+      top: 92px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .panel-stack {
+      display: grid;
+      gap: 18px;
+      min-width: 0;
+    }
+
+    .stack-card {
+      background: var(--surface-0);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+    }
+
+    .stack-card .stack-head {
+      padding: 16px 18px 0;
+    }
+
+    .stack-card .stack-body {
+      padding: 16px 18px 18px;
+    }
+
+    .stepper {
+      display: grid;
+      gap: 10px;
+    }
+
+    .step {
+      display: grid;
+      grid-template-columns: 34px 1fr auto;
+      gap: 12px;
+      align-items: center;
+      padding: 12px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: var(--surface-1);
+    }
+
+    .step-badge {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-size: 13px;
+      font-weight: 800;
+      background: #fff;
+      border: 1px solid var(--border);
+    }
+
+    .step.done .step-badge { background: var(--success-soft); border-color: #bfe0cb; color: var(--success); }
+    .step.live .step-badge { background: var(--brand-soft); border-color: #f0b8af; color: var(--brand); }
+
+    .step-title { font-weight: 700; font-size: 13px; }
+    .step-meta { font-size: 12px; color: var(--text-2); }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      border: 1px solid var(--border);
+      background: var(--surface-1);
+      color: var(--text-2);
+    }
+
+    .badge.info { background: var(--info-soft); color: #0c4d70; border-color: #cde0ee; }
+    .badge.success { background: var(--success-soft); color: #1b5a33; border-color: #c5e5cf; }
+    .badge.warning { background: var(--warning-soft); color: #7d4a0e; border-color: #eed0aa; }
+    .badge.red { background: var(--brand-soft); color: var(--brand); border-color: #f3c7c1; }
+
+    .tab-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
+    .tab-btn {
+      border: 1px solid var(--border);
+      background: var(--surface-1);
+      color: var(--text-2);
+      border-radius: 999px;
+      padding: 9px 12px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .tab-btn.active {
+      background: var(--brand);
+      color: #fff;
+      border-color: var(--brand);
+    }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    .code-box {
+      border: 1px solid var(--border);
+      background: #111418;
+      color: #e7edf3;
+      border-radius: 16px;
+      padding: 16px;
+      min-height: 260px;
+      white-space: pre-wrap;
+      overflow: auto;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .code-box.light {
+      background: #fbfcfd;
+      color: var(--text-1);
+      min-height: 190px;
+    }
+
+    .diagram-shell {
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 10px;
+      background: linear-gradient(180deg, #fff 0%, #f4f7fb 100%);
+      min-height: 320px;
+      overflow: auto;
+    }
+
+    .diagram-shell svg {
+      width: 100%;
+      min-width: 860px;
+      height: 340px;
+      display: block;
+    }
+
+    .mini-note {
+      font-size: 12px;
+      color: var(--text-2);
+      margin-top: 10px;
+    }
+
+    .review-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+
+    .chat-shell {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      min-height: 760px;
+      max-height: calc(100vh - 110px);
+    }
+
+    .chat-thread {
+      background: linear-gradient(180deg, #fafbfd 0%, #f6f8fb 100%);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px;
+      overflow: auto;
+      display: grid;
+      gap: 12px;
+      min-height: 420px;
+    }
+
+    .message {
+      max-width: 88%;
+      padding: 12px 14px;
+      border-radius: 16px;
+      font-size: 13px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
+      white-space: pre-wrap;
+    }
+
+    .message.agent {
+      background: #fff;
+      justify-self: start;
+      border-top-left-radius: 6px;
+    }
+
+    .message.user {
+      background: var(--brand-soft);
+      border-color: #f2cbc5;
+      justify-self: end;
+      border-top-right-radius: 6px;
+    }
+
+    .message .meta {
+      display: block;
+      font-size: 11px;
+      color: var(--text-3);
+      margin-bottom: 6px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .chat-composer {
+      display: grid;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .chat-composer textarea {
+      min-height: 110px;
+      background: #fff;
+    }
+
+    .timeline-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .timeline-item {
+      display: grid;
+      grid-template-columns: 44px 1fr;
+      gap: 12px;
+      align-items: start;
+    }
+
+    .timeline-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      color: var(--text-2);
+    }
+
+    .timeline-body {
+      background: var(--surface-1);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px 14px;
+    }
+
+    .timeline-body h4 {
+      margin: 0 0 4px;
+      font-size: 14px;
+    }
+
+    .timeline-body p {
+      margin: 0;
+      font-size: 12px;
+      color: var(--text-2);
+    }
+
+    .script-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0,1fr));
+      gap: 14px;
+    }
+
+    .script-card {
+      border: 1px solid var(--border);
+      background: var(--surface-0);
+      border-radius: 18px;
+      padding: 16px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .script-card h4 {
+      margin: 0;
+      font-size: 16px;
+    }
+
+    .script-card p {
+      margin: 0;
+      color: var(--text-2);
+      font-size: 13px;
+    }
+
+    .script-card .chips {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .script-card.active-focus {
+      border-color: #e7a9a1;
+      box-shadow: 0 0 0 4px rgba(199,70,52,0.08);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    th, td {
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+      padding: 12px 10px;
+      vertical-align: top;
+    }
+
+    th {
+      color: var(--text-3);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-size: 11px;
+      background: var(--surface-1);
+    }
+
+    .empty-state {
+      padding: 24px;
+      text-align: center;
+      border: 1px dashed var(--border-strong);
+      border-radius: 16px;
+      color: var(--text-2);
+      background: var(--surface-1);
+      display: none;
+    }
+
+    .legend {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .footnote {
+      color: var(--text-3);
+      font-size: 12px;
+    }
+
+    @media (max-width: 1480px) {
+      .split-workbench {
+        grid-template-columns: 360px minmax(420px, 1fr) 330px;
+      }
+      .script-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    }
+
+    @media (max-width: 1220px) {
+      .app-shell, .app-shell.sidebar-collapsed { grid-template-columns: 1fr; }
+      .sidebar {
+        position: static;
+        height: auto;
+      }
+      .app-shell.sidebar-collapsed .sidebar {
+        align-items: stretch;
+        padding: 22px 18px;
+      }
+      .app-shell.sidebar-collapsed .brand p,
+      .app-shell.sidebar-collapsed .nav-block-title,
+      .app-shell.sidebar-collapsed .nav-btn .nav-meta,
+      .app-shell.sidebar-collapsed .timeline-list,
+      .app-shell.sidebar-collapsed .side-card {
+        display: revert;
+      }
+      .app-shell.sidebar-collapsed .brand {
+        padding: 8px 10px 16px;
+        text-align: left;
+      }
+      .app-shell.sidebar-collapsed .brand h1 {
+        font-size: 22px;
+      }
+      .app-shell.sidebar-collapsed .nav-btn {
+        padding: 12px 14px;
+        text-align: left;
+      }
+      .app-shell.sidebar-collapsed .nav-btn .nav-title {
+        font-size: 14px;
+      }
+      .kpi-grid, .grid-3, .grid-4, .field-grid.two, .field-grid.three, .script-grid, .grid-2 {
+        grid-template-columns: 1fr;
+      }
+      .split-workbench {
+        grid-template-columns: 1fr;
+      }
+      .sticky-col { position: static; }
+      .chat-shell { max-height: none; min-height: 0; }
+      .topbar {
+        padding: 14px 18px;
+        align-items: flex-start;
+        flex-direction: column;
+      }
+      .workspace {
+        padding: 18px;
+      }
+    }
+
+    @media (max-width: 900px) {
+      .sidebar {
+        padding: 16px 14px;
+        gap: 14px;
+      }
+      .brand {
+        padding: 4px 8px 12px;
+      }
+      .brand h1 {
+        font-size: 20px;
+      }
+      .topbar-title h2 {
+        font-size: 20px;
+      }
+      .topbar-title p {
+        font-size: 12px;
+      }
+      .topbar-actions {
+        width: 100%;
+      }
+      .card {
+        padding: 14px;
+        border-radius: 14px;
+      }
+      .btn-row {
+        width: 100%;
+      }
+      .btn-row .btn,
+      .topbar-actions .btn {
+        flex: 1 1 180px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .sidebar-toggle {
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+      }
+      .nav-btn {
+        padding: 10px 12px;
+      }
+      .nav-btn .nav-title {
+        font-size: 13px;
+      }
+      .topbar {
+        padding: 12px 14px;
+      }
+      .workspace {
+        padding: 14px;
+        gap: 14px;
+      }
+      .card {
+        padding: 12px;
+      }
+      .kpi {
+        padding: 14px;
+      }
+      .kpi-value {
+        font-size: 26px;
+      }
+      .btn, .btn-row .btn, .topbar-actions .btn {
+        width: 100%;
+        flex: 1 1 100%;
+      }
+      input, select, textarea {
+        min-height: 42px;
+      }
+      textarea {
+        min-height: 96px;
+      }
+      table {
+        min-width: 760px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <button class="sidebar-toggle" id="sidebarToggle" aria-label="Collapse navigation pane" title="Collapse navigation pane">☰</button>
+      <div class="brand">
+                <h1>OCI Infra Agent Workbench</h1>
+        <p>Generate provisioning scripts, review them through the multi-agent loop, collaborate with the agent, and curate reusable gold-standard templates.</p>
+      </div>
+
+      <div>
+        <div class="nav-block-title">Workspace</div>
+        <div class="nav-list" id="mainNav">
+          <button class="nav-btn active" data-target="page-dashboard">
+            <div class="nav-title">Dashboard</div>
+            <div class="nav-meta">Recent work, metrics, and saved scripts</div>
+          </button>
+          <button class="nav-btn" data-target="page-workbench">
+            <div class="nav-title">Agent Workbench</div>
+            <div class="nav-meta">Input requirements, generate, review, fix, and save</div>
+          </button>
+          <button class="nav-btn" data-target="page-library">
+            <div class="nav-title">Script Library</div>
+            <div class="nav-meta">Search saved templates and gold standards</div>
+          </button>
+        </div>
+      </div>
+
+      <div>
+        <div class="nav-block-title">Process visibility</div>
+        <div class="timeline-list">
+          <div class="timeline-item">
+            <div class="timeline-icon">1</div>
+            <div class="timeline-body">
+              <h4>Sub Agent 1 generates</h4>
+              <p>Terraform, cleanup script, API spec, and architecture diagram.</p>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-icon">2</div>
+            <div class="timeline-body">
+              <h4>Sub Agent 2 reviews</h4>
+              <p>Flags security, structure, and rollback issues before user handoff.</p>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-icon">3</div>
+            <div class="timeline-body">
+              <h4>User collaborates</h4>
+              <p>Chat with the agent to refine the generated script until it is usable.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="side-card">
+        <h3>Recommended workflow</h3>
+        <p>Start from Dashboard, open a previous script or create a new request, then promote high-quality output to Gold Standard for reuse across teams.</p>
+        <button class="btn btn-primary" id="sidebarLaunchBtn">Create New Script</button>
+      </div>
+    </aside>
+
+    <div class="content-area">
+      <header class="topbar">
+        <div class="topbar-title">
+          <h2 id="pageHeading">Dashboard</h2>
+          <p id="pageSubheading">Track previously generated scripts, recent activity, and template quality signals.</p>
+        </div>
+        <div class="topbar-actions">
+          <button class="btn btn-secondary" id="topSearchLibrary">Open Library</button>
+          <button class="btn btn-primary" id="topNewRequest">New Infra Request</button>
+        </div>
+      </header>
+
+      <main class="workspace">
+        <section id="page-dashboard" class="page active">
+          <div class="kpi-grid">
+            <div class="kpi">
+              <div class="kpi-label">Scripts created</div>
+              <div class="kpi-value" id="metricTotalScripts">0</div>
+              <div class="kpi-foot">Total artifacts available in the workspace</div>
+            </div>
+            <div class="kpi">
+              <div class="kpi-label">Gold standards</div>
+              <div class="kpi-value" id="metricGoldScripts">0</div>
+              <div class="kpi-foot">Reusable templates recommended for other teams</div>
+            </div>
+            <div class="kpi">
+              <div class="kpi-label">Cleanup ready</div>
+              <div class="kpi-value" id="metricCleanupCoverage">0%</div>
+              <div class="kpi-foot">Saved scripts with rollback coverage</div>
+            </div>
+            <div class="kpi">
+              <div class="kpi-label">This user</div>
+              <div class="kpi-value">Gopi</div>
+              <div class="kpi-foot">Project lead / architect view</div>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h3>Previously generated scripts</h3>
+                  <p class="subtle">Landing page for your work. Open, continue, or repurpose previous scripts without losing the existing functionality.</p>
+                </div>
+                <div class="btn-row">
+                  <button class="btn btn-secondary" id="dashboardRefreshBtn">Refresh</button>
+                  <button class="btn btn-primary" id="dashboardCreateBtn">Create New</button>
+                </div>
+              </div>
+              <div class="script-grid" id="dashboardScriptGrid"></div>
+            </div>
+
+            <div class="panel-stack">
+              <div class="card">
+                <div class="card-header">
+                  <div>
+                    <h3>Recent activity</h3>
+                    <p class="subtle">Operational trace of generation, review, save, and reuse actions.</p>
+                  </div>
+                </div>
+                <div class="timeline-list" id="dashboardActivity"></div>
+              </div>
+
+              <div class="card">
+                <div class="card-header">
+                  <div>
+                    <h3>Quick start</h3>
+                    <p class="subtle">Fast paths for common flows in the platform.</p>
+                  </div>
+                </div>
+                <div class="btn-row">
+                  <button class="btn btn-primary" id="quickNewRequest">New infra request</button>
+                  <button class="btn btn-soft" id="quickLoadSample">Load sample request</button>
+                  <button class="btn btn-secondary" id="quickOpenLibrary">Browse gold standards</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="page-workbench" class="page">
+          <div class="split-workbench">
+            <div class="sticky-col">
+              <div class="stack-card">
+                <div class="stack-head">
+                  <div class="section-title">
+                    <div>
+                      <h3>Requirement input</h3>
+                      <p class="subtle">Capture project context, OCI services, and non-functional needs in natural language.</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="stack-body field-grid">
+                  <div class="field-grid three">
+                    <div class="field">
+                      <label>Project name</label>
+                      <input id="projectName" type="text" placeholder="Customer 360 APEX Platform" />
+                    </div>
+                    <div class="field">
+                      <label>Requestor / team</label>
+                      <input id="requestor" type="text" placeholder="Enterprise Apps Team" />
+                    </div>
+                    <div class="field">
+                      <label>Environment</label>
+                      <select id="environment">
+                        <option>Development</option>
+                        <option>Test</option>
+                        <option selected>Production</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="field">
+                    <label>Infrastructure requirement details</label>
+                    <textarea id="requirementText" placeholder="Describe OCI infrastructure requirements in natural language."></textarea>
+                  </div>
+
+                  <div class="field">
+                    <label>OCI services required</label>
+                    <div class="toolbar-row">
+                      <select id="serviceLov">
+                        <option value="Compute">Compute</option>
+                        <option value="OKE">OKE</option>
+                        <option value="Autonomous DB">Autonomous DB</option>
+                        <option value="APEX">APEX</option>
+                        <option value="Load Balancer">Load Balancer</option>
+                        <option value="Object Storage">Object Storage</option>
+                        <option value="OCI Vault">OCI Vault</option>
+                        <option value="Functions">Functions</option>
+                        <option value="API Gateway">API Gateway</option>
+                        <option value="WAF">WAF</option>
+                      </select>
+                      <button class="btn btn-secondary" id="btnAddService">Add service</button>
+                      <button class="btn btn-secondary" id="btnClearServices">Clear</button>
+                    </div>
+                    <div class="chip-wrap" id="serviceChips"></div>
+                  </div>
+
+                  <div class="field">
+                    <label>Non-functional / security requirements</label>
+                    <textarea id="nfr" placeholder="Example: HA across ADs, least privilege IAM, vault-backed secrets, backup policy, WAF, private subnets, cleanup readiness."></textarea>
+                  </div>
+
+                  <div>
+                    <label style="display:block; margin-bottom:6px; font-size:12px; color:var(--text-2); font-weight:700; text-transform:uppercase; letter-spacing:0.03em;">Generation options</label>
+                    <div class="toggle-row">
+                      <label><input type="checkbox" checked disabled /> Terraform provisioning script</label>
+                      <label><input id="optApi" type="checkbox" checked /> API spec</label>
+                      <label><input id="optCleanup" type="checkbox" checked /> Cleanup script</label>
+                    </div>
+                  </div>
+
+                  <div class="btn-row">
+                    <button class="btn btn-primary" id="btnGenerate">Generate artifacts</button>
+                    <button class="btn btn-soft" id="btnSample">Load sample</button>
+                  </div>
+
+                  <div id="generateStatus" class="status-banner info">Waiting for input. Generate artifacts to start the sub-agent workflow.</div>
+                </div>
+              </div>
+
+              <div class="stack-card chat-shell" style="min-height: 520px;">
+                <div class="stack-head">
+                  <div class="section-title">
+                    <div>
+                      <h3>Chat with agent</h3>
+                      <p class="subtle">Use natural language to fix issues in the generated script and keep a visible collaboration trail.</p>
+                    </div>
+                    <span class="badge info">Context-aware</span>
+                  </div>
+                </div>
+                <div class="stack-body" style="padding-top:0; display:grid; grid-template-rows: 1fr auto; min-height:0;">
+                  <div id="chatThread" class="chat-thread"></div>
+                  <div class="chat-composer">
+                    <textarea id="correctionPrompt" placeholder="Example: Move app nodes to private subnet, tighten IAM scope, and add Object Storage for backups."></textarea>
+                    <div class="btn-row">
+                      <button class="btn btn-primary" id="btnAskAgent">Send to agent</button>
+                      <button class="btn btn-secondary" id="btnInsertSuggestion">Insert sample fix request</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel-stack">
+              <div class="stack-card">
+                <div class="stack-head">
+                  <div class="section-title">
+                    <div>
+                      <h3>Generated outputs</h3>
+                      <p class="subtle">Provisioning script, architecture diagram, API spec, and cleanup are available in one focused workspace.</p>
+                    </div>
+                    <div class="legend">
+                      <span class="badge success">Provisioning</span>
+                      <span class="badge warning">Cleanup ready</span>
+                      <span class="badge info">Review trace visible</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="stack-body">
+                  <div class="tab-row" id="artifactTabs">
+                    <button class="tab-btn active" data-tab="tab-terraform">Terraform script</button>
+                    <button class="tab-btn" data-tab="tab-diagram">Architecture diagram</button>
+                    <button class="tab-btn" data-tab="tab-api">API spec</button>
+                    <button class="tab-btn" data-tab="tab-cleanup">Cleanup script</button>
+                  </div>
+
+                  <div id="tab-terraform" class="tab-panel active">
+                    <div id="terraformOutput" class="code-box"># Terraform provisioning output will appear here...</div>
+                  </div>
+
+                  <div id="tab-diagram" class="tab-panel">
+                    <div id="architectureDiagram" class="diagram-shell"></div>
+                    <p id="architectureCaption" class="mini-note">Architecture diagram will be generated from the selected services.</p>
+                  </div>
+
+                  <div id="tab-api" class="tab-panel">
+                    <div id="apiOutput" class="code-box"># REST API spec output will appear here when enabled...</div>
+                  </div>
+
+                  <div id="tab-cleanup" class="tab-panel">
+                    <div id="cleanupOutput" class="code-box"># Cleanup/deletion script will appear here when enabled...</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="stack-card">
+                <div class="stack-head">
+                  <h3>Review and save</h3>
+                  <p class="subtle">Keep review, correction, metadata, and gold-standard tagging intact in a cleaner layout.</p>
+                </div>
+                <div class="stack-body review-grid">
+                  <div class="field">
+                    <label>Terraform script under review</label>
+                    <div id="reviewScript" class="code-box"># No generated script yet. Generate artifacts first.</div>
+                  </div>
+
+                  <div class="toggle-row check-list">
+                    <label><input type="checkbox" /> Naming standards validated</label>
+                    <label><input type="checkbox" /> Security controls validated</label>
+                    <label><input type="checkbox" /> Cleanup path validated</label>
+                    <label><input type="checkbox" /> Cost estimate acceptable</label>
+                  </div>
+
+                  <div id="reviewStatus" class="status-banner">No correction submitted yet.</div>
+
+                  <div class="field-grid two">
+                    <div>
+                      <div class="field">
+                        <label>Template label</label>
+                        <input id="templateLabel" type="text" placeholder="APEX Production Baseline with AI Agent" />
+                      </div>
+                      <div class="field">
+                        <label>Requirement description</label>
+                        <textarea id="templateDesc" placeholder="Describe infra context, assumptions, guardrails, and approval notes."></textarea>
+                      </div>
+                      <div class="field">
+                        <label>Add keyword</label>
+                        <div class="toolbar-row">
+                          <input id="keywordInput" type="text" placeholder="Type a keyword and add" />
+                          <button class="btn btn-secondary" id="btnAddKeyword">Add</button>
+                        </div>
+                        <div class="tag-picker pill-row" style="margin-top:8px;">
+                          <button data-tag="PaaS Extensions">PaaS Extensions</button>
+                          <button data-tag="AI Agent Project">AI Agent Project</button>
+                          <button data-tag="APEX Application Infra requirements">APEX Application Infra requirements</button>
+                          <button data-tag="OCI Landing Zone">OCI Landing Zone</button>
+                        </div>
+                        <div id="keywordChips" class="chip-wrap" style="margin-top:10px;"></div>
+                      </div>
+                      <div class="toggle-row">
+                        <label><input id="goldStandard" type="checkbox" checked /> Mark as Gold Standard</label>
+                      </div>
+                      <div class="btn-row">
+                        <button class="btn btn-primary" id="btnCopyToSave">Use reviewed script</button>
+                        <button class="btn btn-soft" id="btnSaveTemplate">Save script template</button>
+                      </div>
+                      <div id="saveStatus" class="status-banner">Fill details and save for organization reuse.</div>
+                    </div>
+                    <div>
+                      <label style="display:block; margin-bottom:6px; font-size:12px; color:var(--text-2); font-weight:700; text-transform:uppercase; letter-spacing:0.03em;">Script to save</label>
+                      <div id="saveScript" class="code-box light"># Reviewed script will appear here after generation/review.</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+
+          </div>
+        </section>
+
+        <section id="page-library" class="page">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h3>Script library</h3>
+                <p class="subtle">Search by text, keyword, and template type. View, download, and reuse gold-standard scripts.</p>
+              </div>
+              <div class="btn-row">
+                <button class="btn btn-secondary" id="btnResetSearch">Reset</button>
+                <button class="btn btn-primary" id="btnSearch">Search</button>
+              </div>
+            </div>
+
+            <div class="field-grid three">
+              <div class="field">
+                <label>Search text</label>
+                <input id="searchText" type="text" placeholder="Search label, description, keyword..." />
+              </div>
+              <div class="field">
+                <label>Keyword filter</label>
+                <select id="keywordFilter">
+                  <option value="">All Keywords</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Type</label>
+                <select id="goldFilter">
+                  <option value="all">All</option>
+                  <option value="gold">Gold Standard</option>
+                  <option value="regular">Regular</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h3>Search results</h3>
+                <p class="subtle">Select one row to view details or download individual artifacts.</p>
+              </div>
+              <div class="btn-row">
+                <button class="btn btn-secondary" id="btnViewDetails" disabled>View details</button>
+                <button class="btn btn-secondary" id="btnDownloadTf" disabled>Download TF</button>
+                <button class="btn btn-secondary" id="btnDownloadApi" disabled>Download API</button>
+                <button class="btn btn-secondary" id="btnDownloadCleanup" disabled>Download cleanup</button>
+              </div>
+            </div>
+
+            <div id="searchActionStatus" class="status-banner">Select a script row to enable actions.</div>
+
+            <div style="overflow:auto; margin-top:14px;">
+              <table id="resultsTable">
+                <thead>
+                  <tr>
+                    <th>Select</th>
+                    <th>Label</th>
+                    <th>Keywords</th>
+                    <th>Gold</th>
+                    <th>API</th>
+                    <th>Cleanup</th>
+                    <th>Requirement summary</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+
+            <div id="emptyState" class="empty-state">No matching scripts found.</div>
+          </div>
+
+          <div id="scriptDetailsPanel" class="card" style="display:none;">
+            <div class="card-header">
+              <div>
+                <h3 id="detailsTitle">Script details</h3>
+                <p id="detailsMeta" class="subtle"></p>
+              </div>
+            </div>
+
+            <div class="field-grid">
+              <div>
+                <label style="display:block; margin-bottom:8px; font-size:12px; color:var(--text-2); font-weight:700; text-transform:uppercase; letter-spacing:0.03em;">Terraform script</label>
+                <div id="detailsTerraform" class="code-box"></div>
+              </div>
+
+              <div id="detailsApiWrap" style="display:none;">
+                <label style="display:block; margin-bottom:8px; font-size:12px; color:var(--text-2); font-weight:700; text-transform:uppercase; letter-spacing:0.03em;">REST API spec</label>
+                <div id="detailsApi" class="code-box"></div>
+              </div>
+
+              <div id="detailsCleanupWrap" style="display:none;">
+                <label style="display:block; margin-bottom:8px; font-size:12px; color:var(--text-2); font-weight:700; text-transform:uppercase; letter-spacing:0.03em;">Cleanup / deletion script</label>
+                <div id="detailsCleanup" class="code-box"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    const pageMeta = {
+      'page-dashboard': {
+        title: 'Dashboard',
+        subtitle: 'Track previously generated scripts, recent activity, and template quality signals.'
+      },
+      'page-workbench': {
+        title: 'Agent Workbench',
+        subtitle: 'Describe infrastructure needs, review artifacts, and collaborate with the agent to fix issues.'
+      },
+      'page-library': {
+        title: 'Script Library',
+        subtitle: 'Search, inspect, and download saved templates including gold-standard scripts.'
+      }
+    };
+
+    const navButtons = document.querySelectorAll('#mainNav .nav-btn');
+    const appShell = document.querySelector('.app-shell');
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const pages = document.querySelectorAll('.page');
+    const pageHeading = document.getElementById('pageHeading');
+    const pageSubheading = document.getElementById('pageSubheading');
+
+    function syncSidebarToggle() {
+      const collapsed = appShell.classList.contains('sidebar-collapsed');
+      sidebarToggle.setAttribute('aria-label', collapsed ? 'Expand navigation pane' : 'Collapse navigation pane');
+      sidebarToggle.setAttribute('title', collapsed ? 'Expand navigation pane' : 'Collapse navigation pane');
+      sidebarToggle.textContent = collapsed ? '→' : '☰';
+    }
+
+    sidebarToggle.addEventListener('click', () => {
+      appShell.classList.toggle('sidebar-collapsed');
+      syncSidebarToggle();
+    });
+
+    function switchPage(pageId) {
+      navButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.target === pageId));
+      pages.forEach(page => page.classList.toggle('active', page.id === pageId));
+      pageHeading.textContent = pageMeta[pageId].title;
+      pageSubheading.textContent = pageMeta[pageId].subtitle;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    navButtons.forEach(btn => btn.addEventListener('click', () => switchPage(btn.dataset.target)));
+    syncSidebarToggle();
+
+    document.getElementById('sidebarLaunchBtn').addEventListener('click', () => switchPage('page-workbench'));
+    document.getElementById('topNewRequest').addEventListener('click', () => switchPage('page-workbench'));
+    document.getElementById('topSearchLibrary').addEventListener('click', () => switchPage('page-library'));
+    document.getElementById('dashboardCreateBtn').addEventListener('click', () => switchPage('page-workbench'));
+    document.getElementById('dashboardRefreshBtn').addEventListener('click', () => renderDashboard());
+    document.getElementById('quickNewRequest').addEventListener('click', () => switchPage('page-workbench'));
+    document.getElementById('quickOpenLibrary').addEventListener('click', () => switchPage('page-library'));
+
+    const serviceLov = document.getElementById('serviceLov');
+    const serviceChips = document.getElementById('serviceChips');
+    const requirementTextInput = document.getElementById('requirementText');
+    const nfrInput = document.getElementById('nfr');
+    const terraformOutput = document.getElementById('terraformOutput');
+    const apiOutput = document.getElementById('apiOutput');
+    const cleanupOutput = document.getElementById('cleanupOutput');
+    const architectureDiagram = document.getElementById('architectureDiagram');
+    const architectureCaption = document.getElementById('architectureCaption');
+    const reviewScript = document.getElementById('reviewScript');
+    const saveScript = document.getElementById('saveScript');
+    const generateStatus = document.getElementById('generateStatus');
+    const reviewStatus = document.getElementById('reviewStatus');
+    const saveStatus = document.getElementById('saveStatus');
+    const optApi = document.getElementById('optApi');
+    const optCleanup = document.getElementById('optCleanup');
+    const chatThread = document.getElementById('chatThread');
+    const resultsTbody = document.querySelector('#resultsTable tbody');
+    const scriptDetailsPanel = document.getElementById('scriptDetailsPanel');
+    const detailsTitle = document.getElementById('detailsTitle');
+    const detailsMeta = document.getElementById('detailsMeta');
+    const detailsTerraform = document.getElementById('detailsTerraform');
+    const detailsApiWrap = document.getElementById('detailsApiWrap');
+    const detailsApi = document.getElementById('detailsApi');
+    const detailsCleanupWrap = document.getElementById('detailsCleanupWrap');
+    const detailsCleanup = document.getElementById('detailsCleanup');
+    const btnViewDetails = document.getElementById('btnViewDetails');
+    const btnDownloadTf = document.getElementById('btnDownloadTf');
+    const btnDownloadApi = document.getElementById('btnDownloadApi');
+    const btnDownloadCleanup = document.getElementById('btnDownloadCleanup');
+    const searchActionStatus = document.getElementById('searchActionStatus');
+    const keywordChips = document.getElementById('keywordChips');
+
+    let selectedServices = ['Compute', 'Autonomous DB', 'APEX', 'Load Balancer', 'OCI Vault'];
+    let keywords = [];
+    let selectedResultIndex = -1;
+    let lastRenderedResults = [];
+    let currentFocusedDashboardId = null;
+
+    const activityLog = [
+      { icon: 'AI', title: 'Provisioning baseline generated', text: 'Customer 360 APEX Platform artifacts were generated and reviewed by Sub Agent 2.' },
+      { icon: 'GS', title: 'Gold standard updated', text: 'APEX + ATP Baseline promoted for cross-team reuse.' },
+      { icon: 'FX', title: 'User correction applied', text: 'Private subnet placement and tighter IAM policy notes were added to the draft.' }
+    ];
+
+    const savedScripts = [
+      {
+        id: 1,
+        label: 'APEX + ATP Baseline',
+        description: 'Production baseline for APEX with Autonomous DB, OCI Vault, and rollback-ready cleanup.',
+        keywords: ['APEX Application Infra requirements', 'PaaS Extensions'],
+        gold: true,
+        hasApi: true,
+        hasCleanup: true,
+        environment: 'Production',
+        updatedAt: 'Today, 11:10 AM',
+        apiSpec: 'openapi: 3.0.1\npaths:\n  /provision:\n    post:\n      summary: Provision infra',
+        cleanupScript: '#!/usr/bin/env bash\nterraform destroy -auto-approve',
+        script: '# Sample baseline script'
+      },
+      {
+        id: 2,
+        label: 'AI Agent Dev Sandbox',
+        description: 'Cost-optimized dev environment for AI agent experimentation and fast iteration.',
+        keywords: ['AI Agent Project'],
+        gold: false,
+        hasApi: false,
+        hasCleanup: true,
+        environment: 'Development',
+        updatedAt: 'Yesterday, 4:25 PM',
+        apiSpec: '',
+        cleanupScript: '#!/usr/bin/env bash\nterraform destroy -auto-approve',
+        script: '# Dev sandbox script'
+      },
+      {
+        id: 3,
+        label: 'OCI Landing Zone Secure Starter',
+        description: 'Reusable secure network, vault, logging, and load balancer starter for project onboarding.',
+        keywords: ['OCI Landing Zone'],
+        gold: true,
+        hasApi: true,
+        hasCleanup: true,
+        environment: 'Production',
+        updatedAt: 'Mar 26, 9:40 AM',
+        apiSpec: 'openapi: 3.0.1\npaths:\n  /status/{jobId}:\n    get:\n      summary: Get status',
+        cleanupScript: '#!/usr/bin/env bash\necho cleanup landing zone',
+        script: '# Landing zone starter script'
+      }
+    ];
+
+    const artifactTabs = document.querySelectorAll('#artifactTabs .tab-btn');
+    const artifactPanels = document.querySelectorAll('.tab-panel');
+    artifactTabs.forEach(btn => {
+      btn.addEventListener('click', () => {
+        artifactTabs.forEach(tab => tab.classList.toggle('active', tab === btn));
+        artifactPanels.forEach(panel => panel.classList.toggle('active', panel.id === btn.dataset.tab));
+      });
+    });
+
+    function addChatMessage(role, text) {
+      const message = document.createElement('div');
+      message.className = `message ${role}`;
+      message.innerHTML = `<span class="meta">${role === 'agent' ? 'OCI Infra Agent Workbench' : 'You'}</span>${text}`;
+      chatThread.appendChild(message);
+      chatThread.scrollTop = chatThread.scrollHeight;
+    }
+
+    function resetChat() {
+      chatThread.innerHTML = '';
+      addChatMessage('agent', 'Describe your infra requirement, generate the artifacts, and then ask me to fix any issue in the script. I will keep the review loop visible.');
+      addChatMessage('agent', 'Typical requests: “move resources to private subnet”, “tighten IAM”, “add cleanup coverage”, or “make this script gold-standard ready”.');
+    }
+
+    function renderServiceChips() {
+      serviceChips.innerHTML = '';
+      selectedServices.forEach((svc, index) => {
+        const chip = document.createElement('span');
+        chip.className = 'pill';
+        chip.innerHTML = `${svc} <button title="remove" data-index="${index}">✕</button>`;
+        serviceChips.appendChild(chip);
+      });
+    }
+
+    function renderKeywordChips() {
+      keywordChips.innerHTML = '';
+      keywords.forEach((kw, index) => {
+        const chip = document.createElement('span');
+        chip.className = 'pill';
+        chip.innerHTML = `${kw} <button title="remove" data-index="${index}">✕</button>`;
+        keywordChips.appendChild(chip);
+      });
+    }
+
+    function addService(service) {
+      const clean = (service || '').trim();
+      if (!clean) return;
+      if (!selectedServices.some(s => s.toLowerCase() === clean.toLowerCase())) {
+        selectedServices.push(clean);
+        renderServiceChips();
+      }
+    }
+
+    function addKeyword(kw) {
+      const clean = (kw || '').trim();
+      if (!clean) return;
+      if (!keywords.some(k => k.toLowerCase() === clean.toLowerCase())) {
+        keywords.push(clean);
+        renderKeywordChips();
+      }
+    }
+
+    document.getElementById('btnAddService').addEventListener('click', () => addService(serviceLov.value));
+    document.getElementById('btnClearServices').addEventListener('click', () => { selectedServices = []; renderServiceChips(); });
+    serviceChips.addEventListener('click', (e) => {
+      if (e.target.tagName === 'BUTTON') {
+        selectedServices.splice(Number(e.target.dataset.index), 1);
+        renderServiceChips();
+      }
+    });
+
+    document.getElementById('btnAddKeyword').addEventListener('click', () => {
+      const input = document.getElementById('keywordInput');
+      addKeyword(input.value);
+      input.value = '';
+    });
+
+    keywordChips.addEventListener('click', (e) => {
+      if (e.target.tagName === 'BUTTON') {
+        keywords.splice(Number(e.target.dataset.index), 1);
+        renderKeywordChips();
+      }
+    });
+
+    document.querySelectorAll('.tag-picker button').forEach(btn => {
+      btn.addEventListener('click', () => addKeyword(btn.dataset.tag));
+    });
+
+    function inferSubnetStrategy(text) {
+      const t = (text || '').toLowerCase();
+      if (t.includes('multi-tier') || t.includes('web/app/db') || t.includes('3-tier') || t.includes('three tier')) return 'Multi-tier (Web/App/DB)';
+      if (t.includes('private only') || (t.includes('private') && !t.includes('public'))) return 'Private only';
+      if (t.includes('public') && t.includes('private')) return 'Public + Private';
+      return 'Public + Private';
+    }
+
+    function buildTerraformScript(subnetStrategy) {
+      const projectName = (document.getElementById('projectName').value || 'sample_project').replace(/"/g, '');
+      const requestor = (document.getElementById('requestor').value || 'Unknown Team').replace(/"/g, '');
+      const env = (document.getElementById('environment').value || 'Development').toLowerCase();
+      const reqText = requirementTextInput.value || 'No detailed requirement provided.';
+      const nfrText = nfrInput.value || 'No explicit non-functional requirements provided.';
+      const services = selectedServices.length ? selectedServices : ['Compute'];
+
+      return `# Generated by OCI Infra Agent Workbench\nterraform {\n  required_version = \">= 1.5.0\"\n}\n\nlocals {\n  project_name      = \"${projectName}\"\n  requestor         = \"${requestor}\"\n  environment       = \"${env}\"\n  subnet_strategy   = \"${subnetStrategy}\"\n  selected_services = ${JSON.stringify(services)}\n}\n\nprovider \"oci\" {\n  region = var.region\n}\n\nmodule \"oci_foundation\" {\n  source          = \"./modules/oci_foundation\"\n  project_name    = local.project_name\n  environment     = local.environment\n  subnet_strategy = local.subnet_strategy\n  services        = local.selected_services\n}\n\n# Requirement summary:\n# ${reqText.replace(/\n/g, '\n# ')}\n\n# Non-functional/security requirements:\n# ${nfrText.replace(/\n/g, '\n# ')}\n`;
+    }
+
+    function buildRestApiSpec(subnetStrategy) {
+      const projectName = document.getElementById('projectName').value || 'sample_project';
+      return `openapi: 3.0.1\ninfo:\n  title: OCI Infra Provisioning API - ${projectName}\n  version: 1.0.0\npaths:\n  /provision:\n    post:\n      summary: Trigger OCI infrastructure provisioning\n      responses:\n        '202':\n          description: Provisioning accepted\n  /status/{jobId}:\n    get:\n      summary: Get provisioning status\n      responses:\n        '200':\n          description: Current status\n  /cleanup:\n    post:\n      summary: Trigger cleanup when failures occur\n      responses:\n        '202':\n          description: Cleanup accepted\nx-agent-hints:\n  subnet_strategy: \"${subnetStrategy}\"\n  services: ${JSON.stringify(selectedServices)}\n`;
+    }
+
+    function buildCleanupScript(subnetStrategy) {
+      const projectName = (document.getElementById('projectName').value || 'sample_project').replace(/"/g, '');
+      const env = (document.getElementById('environment').value || 'Development').toLowerCase();
+      return `#!/usr/bin/env bash\n# Cleanup / deletion script generated by OCI Infra Agent Workbench\nset -euo pipefail\n\nPROJECT_NAME=\"${projectName}\"\nENVIRONMENT=\"${env}\"\nSUBNET_STRATEGY=\"${subnetStrategy}\"\n\necho \"Starting cleanup for $PROJECT_NAME ($ENVIRONMENT)\"\nterraform workspace select \"$ENVIRONMENT\" || terraform workspace new \"$ENVIRONMENT\"\nterraform destroy -auto-approve -var \"project_name=$PROJECT_NAME\"\n\n# Optional OCI CLI cleanup stubs\n# oci lb load-balancer delete --load-balancer-id <ocid> --force\n# oci db autonomous-database delete --autonomous-database-id <ocid>\n# oci network vcn delete --vcn-id <ocid> --force\n\necho \"Cleanup complete. Verify resources in OCI console.\"`;
+    }
+
+    function buildArchitectureDiagram(subnetStrategy) {
+      const normalized = selectedServices.map((s) => s.toLowerCase());
+      const hasService = (name) => normalized.some((s) => s.includes(name));
+      const hasApiGateway = hasService('api gateway');
+      const hasLoadBalancer = hasService('load balancer');
+      const hasOke = hasService('oke');
+      const hasCompute = hasService('compute');
+      const hasApex = hasService('apex');
+      const hasAdb = hasService('autonomous db');
+      const hasVault = hasService('vault');
+      const hasFunctions = hasService('functions');
+      const hasObject = hasService('object storage');
+      const hasWaf = hasService('waf');
+
+      const appTierLabel = hasOke ? 'OKE Cluster / App Pods' : (hasCompute ? 'Compute App Tier' : 'Application Tier');
+      const appTierSub = hasApex ? 'APEX Runtime Enabled' : 'Custom App Runtime';
+
+      const wafNode = hasWaf
+        ? `<rect x="155" y="126" rx="10" ry="10" width="120" height="54" fill="#fff1f0" stroke="#c74634" stroke-width="1.5"/>\n           <text x="215" y="148" text-anchor="middle" font-size="12" fill="#8d2e22" font-weight="700">WAF</text>\n           <text x="215" y="164" text-anchor="middle" font-size="10" fill="#8d2e22">Edge protection</text>` : '';
+      const apiNode = hasApiGateway
+        ? `<rect x="305" y="126" rx="10" ry="10" width="130" height="54" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>\n           <text x="370" y="148" text-anchor="middle" font-size="12" fill="#1e3a8a" font-weight="700">API Gateway</text>\n           <text x="370" y="164" text-anchor="middle" font-size="10" fill="#1e3a8a">Ingress + routing</text>` : '';
+      const lbNode = hasLoadBalancer
+        ? `<rect x="465" y="126" rx="10" ry="10" width="140" height="54" fill="#ecfeff" stroke="#0891b2" stroke-width="1.5"/>\n           <text x="535" y="148" text-anchor="middle" font-size="12" fill="#164e63" font-weight="700">Load Balancer</text>\n           <text x="535" y="164" text-anchor="middle" font-size="10" fill="#164e63">Public entry</text>` : '';
+      const dbNode = hasAdb
+        ? `<rect x="770" y="244" rx="10" ry="10" width="170" height="64" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.5"/>\n           <text x="855" y="268" text-anchor="middle" font-size="12" fill="#4c1d95" font-weight="700">Autonomous DB</text>\n           <text x="855" y="284" text-anchor="middle" font-size="10" fill="#4c1d95">Persistent data layer</text>` : '';
+      const vaultNode = hasVault
+        ? `<rect x="770" y="70" rx="10" ry="10" width="170" height="56" fill="#fefce8" stroke="#a16207" stroke-width="1.5"/>\n           <text x="855" y="92" text-anchor="middle" font-size="12" fill="#78350f" font-weight="700">OCI Vault</text>\n           <text x="855" y="108" text-anchor="middle" font-size="10" fill="#78350f">Secrets + keys</text>` : '';
+      const functionNode = hasFunctions
+        ? `<rect x="580" y="258" rx="10" ry="10" width="160" height="54" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5"/>\n           <text x="660" y="280" text-anchor="middle" font-size="12" fill="#9a3412" font-weight="700">OCI Functions</text>\n           <text x="660" y="296" text-anchor="middle" font-size="10" fill="#9a3412">Event-driven tasks</text>` : '';
+      const objectNode = hasObject
+        ? `<rect x="390" y="258" rx="10" ry="10" width="170" height="54" fill="#f0fdf4" stroke="#15803d" stroke-width="1.5"/>\n           <text x="475" y="280" text-anchor="middle" font-size="12" fill="#14532d" font-weight="700">Object Storage</text>\n           <text x="475" y="296" text-anchor="middle" font-size="10" fill="#14532d">Artifacts / backups</text>` : '';
+
+      const ingressX = hasWaf ? 155 : (hasApiGateway ? 305 : (hasLoadBalancer ? 465 : 610));
+
+      return `
+<svg viewBox="0 0 1000 340" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Generated OCI Architecture Diagram">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,4 L0,8 z" fill="#334155" />
+    </marker>
+    <marker id="arrowMuted" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,4 L0,8 z" fill="#64748b" />
+    </marker>
+  </defs>
+
+  <rect x="10" y="10" width="980" height="320" rx="16" ry="16" fill="#ffffff" stroke="#cfd7e3"/>
+  <text x="34" y="36" font-size="14" font-weight="700" fill="#1b1f24">OCI Tenancy Architecture</text>
+  <text x="780" y="36" font-size="11" fill="#5f6b77">Subnet Strategy: ${subnetStrategy}</text>
+
+  <rect x="48" y="90" width="585" height="214" rx="14" ry="14" fill="#fafbfd" stroke="#aab6c4" stroke-dasharray="6 5"/>
+  <text x="66" y="110" font-size="11" fill="#45515d" font-weight="700">Public / Edge Zone</text>
+
+  <rect x="648" y="90" width="318" height="214" rx="14" ry="14" fill="#fafbfd" stroke="#aab6c4" stroke-dasharray="6 5"/>
+  <text x="666" y="110" font-size="11" fill="#45515d" font-weight="700">Private Zone</text>
+
+  <circle cx="88" cy="153" r="28" fill="#e5ebf1" stroke="#64748b" stroke-width="1.5"/>
+  <text x="88" y="150" text-anchor="middle" font-size="11" fill="#334155" font-weight="700">Users</text>
+  <text x="88" y="165" text-anchor="middle" font-size="9" fill="#334155">Internet</text>
+
+  ${wafNode}
+  ${apiNode}
+  ${lbNode}
+
+  <rect x="670" y="126" rx="10" ry="10" width="180" height="76" fill="#eef2ff" stroke="#4338ca" stroke-width="1.5"/>
+  <text x="760" y="150" text-anchor="middle" font-size="12" fill="#312e81" font-weight="700">${appTierLabel}</text>
+  <text x="760" y="166" text-anchor="middle" font-size="10" fill="#312e81">${appTierSub}</text>
+  <text x="760" y="182" text-anchor="middle" font-size="10" fill="#312e81">NSGs, security lists, IAM</text>
+
+  ${dbNode}
+  ${vaultNode}
+  ${functionNode}
+  ${objectNode}
+
+  <line x1="116" y1="153" x2="${ingressX}" y2="153" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+  ${hasWaf && hasApiGateway ? '<line x1="275" y1="153" x2="305" y2="153" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>' : ''}
+  ${(!hasWaf && hasApiGateway && hasLoadBalancer) ? '<line x1="435" y1="153" x2="465" y2="153" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>' : ''}
+  ${hasLoadBalancer ? '<line x1="605" y1="153" x2="670" y2="153" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>' : (hasApiGateway ? '<line x1="435" y1="153" x2="670" y2="153" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>' : '')}
+  ${hasAdb ? '<line x1="850" y1="202" x2="800" y2="244" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>' : ''}
+  ${hasFunctions ? '<line x1="760" y1="202" x2="660" y2="258" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>' : ''}
+  ${hasObject ? '<line x1="710" y1="202" x2="540" y2="258" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>' : ''}
+  ${hasVault ? '<line x1="850" y1="126" x2="855" y2="126" stroke="#64748b" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#arrowMuted)"/>' : ''}
+</svg>`;
+    }
+
+    function buildArchitectureCaption(subnetStrategy) {
+      const parts = [
+        'Architecture derived from selected OCI services',
+        `Subnet strategy: ${subnetStrategy}`
+      ];
+      if (optApi.checked) parts.push('API contract generated for orchestration');
+      if (optCleanup.checked) parts.push('Cleanup path included for rollback safety');
+      return parts.join(' | ');
+    }
+
+    function updateAgentStepper(state) {
+      const steps = document.querySelectorAll('#agentStepper .step');
+      steps.forEach(step => { step.classList.remove('done', 'live'); step.querySelector('.badge').className = 'badge'; step.querySelector('.badge').textContent = 'Pending'; });
+      if (state === 'idle') {
+        steps[0].classList.add('live');
+        steps[0].querySelector('.badge').className = 'badge red';
+        steps[0].querySelector('.badge').textContent = 'Ready';
+        return;
+      }
+      if (state === 'generated') {
+        steps[0].classList.add('done');
+        steps[0].querySelector('.badge').className = 'badge success';
+        steps[0].querySelector('.badge').textContent = 'Generated';
+        steps[1].classList.add('live');
+        steps[1].querySelector('.badge').className = 'badge warning';
+        steps[1].querySelector('.badge').textContent = 'Reviewing';
+        return;
+      }
+      if (state === 'reviewed') {
+        steps[0].classList.add('done');
+        steps[1].classList.add('done');
+        steps[0].querySelector('.badge').className = 'badge success';
+        steps[0].querySelector('.badge').textContent = 'Generated';
+        steps[1].querySelector('.badge').className = 'badge success';
+        steps[1].querySelector('.badge').textContent = 'Reviewed';
+        steps[2].classList.add('live');
+        steps[2].querySelector('.badge').className = 'badge red';
+        steps[2].querySelector('.badge').textContent = 'Needs user';
+        return;
+      }
+      if (state === 'saved') {
+        steps.forEach(step => step.classList.add('done'));
+        steps[0].querySelector('.badge').className = 'badge success';
+        steps[0].querySelector('.badge').textContent = 'Generated';
+        steps[1].querySelector('.badge').className = 'badge success';
+        steps[1].querySelector('.badge').textContent = 'Reviewed';
+        steps[2].querySelector('.badge').className = 'badge success';
+        steps[2].querySelector('.badge').textContent = 'Saved';
+      }
+    }
+
+    function pushActivity(title, text, icon = 'AI') {
+      activityLog.unshift({ icon, title, text });
+      if (activityLog.length > 6) activityLog.pop();
+      renderActivity();
+    }
+
+    function generateArtifacts() {
+      if (!selectedServices.length) {
+        generateStatus.className = 'status-banner warning';
+        generateStatus.textContent = 'Please add at least one OCI service before generating.';
+        return;
+      }
+
+      const combined = `${requirementTextInput.value}\n${nfrInput.value}`;
+      const subnetStrategy = inferSubnetStrategy(combined);
+      const terraform = buildTerraformScript(subnetStrategy);
+      const apiSpec = buildRestApiSpec(subnetStrategy);
+      const cleanupScript = buildCleanupScript(subnetStrategy);
+
+      terraformOutput.textContent = terraform;
+      reviewScript.textContent = terraform;
+      saveScript.textContent = terraform;
+      architectureDiagram.innerHTML = buildArchitectureDiagram(subnetStrategy);
+      architectureCaption.textContent = buildArchitectureCaption(subnetStrategy);
+      apiOutput.textContent = optApi.checked ? apiSpec : '# API spec generation disabled.';
+      cleanupOutput.textContent = optCleanup.checked ? cleanupScript : '# Cleanup generation disabled.';
+
+      generateStatus.className = 'status-banner success';
+      generateStatus.innerHTML = '<b>Artifacts generated.</b> Sub Agent 1 completed generation and Sub Agent 2 is reviewing the draft for quality issues.';
+      reviewStatus.className = 'status-banner info';
+      reviewStatus.innerHTML = '<b>Review ready.</b> The draft is available for user validation and chat-based correction.';
+
+      addChatMessage('agent', 'Artifacts generated. I created the provisioning script, cleanup script, API spec, and architecture diagram. Sub Agent 2 has completed an initial review.');
+      addChatMessage('agent', 'Suggested next step: ask me to fix any issue, such as subnet placement, IAM scope, naming, or backup coverage.');
+      pushActivity('Artifacts generated', 'Provisioning, cleanup, and architecture assets were generated for the current request.', 'AI');
+      updateAgentStepper('reviewed');
+    }
+
+    document.getElementById('btnGenerate').addEventListener('click', generateArtifacts);
+
+    document.getElementById('btnSample').addEventListener('click', loadSample);
+    document.getElementById('quickLoadSample').addEventListener('click', () => { switchPage('page-workbench'); loadSample(); });
+
+    function loadSample() {
+      document.getElementById('projectName').value = 'Customer 360 APEX Platform';
+      document.getElementById('requestor').value = 'Enterprise Apps Team';
+      document.getElementById('environment').value = 'Production';
+      requirementTextInput.value = 'Need OCI infrastructure for a customer-facing APEX application with Autonomous DB, private app subnet, public ingress through WAF and load balancer, and vault-backed secret management.';
+      nfrInput.value = 'Deploy across 2 ADs, enforce least privilege IAM, enable cleanup and rollback, store backups in Object Storage, and support future API-driven provisioning orchestration.';
+      document.getElementById('templateDesc').value = 'Production APEX baseline with secure networking, vault integration, backup storage, and rollback readiness.';
+      selectedServices = ['Compute', 'Autonomous DB', 'APEX', 'Load Balancer', 'OCI Vault', 'Object Storage', 'API Gateway', 'WAF'];
+      renderServiceChips();
+      generateStatus.className = 'status-banner info';
+      generateStatus.textContent = 'Sample requirement loaded. Generate artifacts to preview the full workflow.';
+      switchPage('page-workbench');
+    }
+
+    document.getElementById('btnInsertSuggestion').addEventListener('click', () => {
+      document.getElementById('correctionPrompt').value = 'Please move app resources fully into private subnets, tighten IAM policy scope, and add explicit backup notes to Object Storage.';
+    });
+
+    document.getElementById('btnAskAgent').addEventListener('click', () => {
+      const prompt = document.getElementById('correctionPrompt').value.trim();
+      if (!prompt) {
+        reviewStatus.className = 'status-banner warning';
+        reviewStatus.textContent = 'Please describe the issue or requested fix before sending it to the agent.';
+        return;
+      }
+
+      addChatMessage('user', prompt);
+
+      const updated = `${reviewScript.textContent}\n# --- User Correction Request ---\n# ${prompt}\n# Agent Note: Changes merged into the draft after review.`;
+      reviewScript.textContent = updated;
+      saveScript.textContent = updated;
+
+      let agentReply = 'I updated the draft and kept the generated functionality intact. Review the revised script and save it when ready.';
+      const lower = prompt.toLowerCase();
+      if (lower.includes('private subnet')) agentReply = 'Updated: app tier guidance now emphasizes private subnet placement while keeping public ingress at the edge only.';
+      if (lower.includes('iam')) agentReply += '\nAlso noted: IAM policy scope should be narrowed to least privilege.';
+      if (lower.includes('backup') || lower.includes('object storage')) agentReply += '\nAdded: backup / artifact storage expectation in Object Storage.';
+
+      addChatMessage('agent', agentReply);
+      reviewStatus.className = 'status-banner success';
+      reviewStatus.innerHTML = '<b>Correction applied.</b> Updated script is now ready for approval and save.';
+      pushActivity('User correction applied', prompt, 'FX');
+      updateAgentStepper('reviewed');
+      document.getElementById('correctionPrompt').value = '';
+    });
+
+    document.getElementById('btnCopyToSave').addEventListener('click', () => {
+      saveScript.textContent = reviewScript.textContent;
+      saveStatus.className = 'status-banner info';
+      saveStatus.textContent = 'Reviewed script copied. Add metadata and save it to the library.';
+    });
+
+    function sanitizeFileName(name) {
+      const cleaned = (name || 'script').replace(/[^a-zA-Z0-9-_]+/g, '-').replace(/-+/g, '-').replace(/(^-|-$)/g, '');
+      return cleaned || 'script';
+    }
+
+    function downloadTextFile(filename, content) {
+      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function refreshKeywordFilter() {
+      const filter = document.getElementById('keywordFilter');
+      const all = [...new Set(savedScripts.flatMap((s) => s.keywords))].sort((a, b) => a.localeCompare(b));
+      filter.innerHTML = '<option value="">All Keywords</option>' + all.map((k) => `<option value="${k}">${k}</option>`).join('');
+    }
+
+    function setActionButtonsState(enabled) {
+      btnViewDetails.disabled = !enabled;
+      btnDownloadTf.disabled = !enabled;
+      btnDownloadApi.disabled = !enabled;
+      btnDownloadCleanup.disabled = !enabled;
+    }
+
+    function getSelectedResultItem() {
+      if (selectedResultIndex < 0) return null;
+      return lastRenderedResults[selectedResultIndex] || null;
+    }
+
+    function showScriptDetails(item) {
+      detailsTitle.textContent = item.label || 'Script details';
+      detailsMeta.textContent = `Gold Standard: ${item.gold ? 'Yes' : 'No'} | Environment: ${item.environment || 'NA'} | Keywords: ${(item.keywords || []).join(', ') || 'None'}`;
+      detailsTerraform.textContent = item.script || '# No Terraform script available.';
+
+      if (item.hasApi && item.apiSpec) {
+        detailsApiWrap.style.display = 'block';
+        detailsApi.textContent = item.apiSpec;
+      } else {
+        detailsApiWrap.style.display = 'none';
+        detailsApi.textContent = '';
+      }
+
+      if (item.hasCleanup && item.cleanupScript) {
+        detailsCleanupWrap.style.display = 'block';
+        detailsCleanup.textContent = item.cleanupScript;
+      } else {
+        detailsCleanupWrap.style.display = 'none';
+        detailsCleanup.textContent = '';
+      }
+
+      scriptDetailsPanel.style.display = 'block';
+      scriptDetailsPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function renderResults(list) {
+      lastRenderedResults = [...list];
+      selectedResultIndex = -1;
+      setActionButtonsState(false);
+      resultsTbody.innerHTML = '';
+      scriptDetailsPanel.style.display = 'none';
+      document.getElementById('emptyState').style.display = list.length ? 'none' : 'block';
+      searchActionStatus.textContent = list.length ? 'Select a script row to enable actions.' : 'No rows available for actions.';
+
+      list.forEach((item, idx) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><input type="radio" name="selectedScriptRow" data-index="${idx}" /></td>
+          <td><strong>${item.label}</strong><br><span class="footnote">${item.environment || 'NA'} • ${item.updatedAt || 'Recently updated'}</span></td>
+          <td>${item.keywords.join(', ')}</td>
+          <td>${item.gold ? 'Yes' : 'No'}</td>
+          <td>${item.hasApi ? 'Yes' : 'No'}</td>
+          <td>${item.hasCleanup ? 'Yes' : 'No'}</td>
+          <td>${item.description}</td>`;
+        resultsTbody.appendChild(tr);
+      });
+    }
+
+    resultsTbody.addEventListener('change', (e) => {
+      const radio = e.target.closest('input[type="radio"][name="selectedScriptRow"]');
+      if (!radio) return;
+      selectedResultIndex = Number(radio.dataset.index);
+      const selected = getSelectedResultItem();
+      setActionButtonsState(!!selected);
+      if (selected) searchActionStatus.textContent = `Selected: ${selected.label}`;
+    });
+
+    btnViewDetails.addEventListener('click', () => {
+      const item = getSelectedResultItem();
+      if (!item) return;
+      showScriptDetails(item);
+      searchActionStatus.textContent = `Viewing details for: ${item.label}`;
+    });
+
+    btnDownloadTf.addEventListener('click', () => {
+      const item = getSelectedResultItem();
+      if (!item) return;
+      downloadTextFile(`${sanitizeFileName(item.label)}-terraform.tf`, item.script || '# No Terraform script available.');
+      searchActionStatus.textContent = `Downloaded Terraform script for: ${item.label}`;
+    });
+
+    btnDownloadApi.addEventListener('click', () => {
+      const item = getSelectedResultItem();
+      if (!item) return;
+      if (!(item.hasApi && item.apiSpec)) {
+        searchActionStatus.textContent = `No API script available for: ${item.label}`;
+        return;
+      }
+      downloadTextFile(`${sanitizeFileName(item.label)}-api.yaml`, item.apiSpec);
+      searchActionStatus.textContent = `Downloaded API spec for: ${item.label}`;
+    });
+
+    btnDownloadCleanup.addEventListener('click', () => {
+      const item = getSelectedResultItem();
+      if (!item) return;
+      if (!(item.hasCleanup && item.cleanupScript)) {
+        searchActionStatus.textContent = `No cleanup script available for: ${item.label}`;
+        return;
+      }
+      downloadTextFile(`${sanitizeFileName(item.label)}-cleanup.sh`, item.cleanupScript);
+      searchActionStatus.textContent = `Downloaded cleanup script for: ${item.label}`;
+    });
+
+    document.getElementById('btnSearch').addEventListener('click', () => {
+      const searchText = document.getElementById('searchText').value.trim().toLowerCase();
+      const keyword = document.getElementById('keywordFilter').value;
+      const goldFilter = document.getElementById('goldFilter').value;
+
+      const filtered = savedScripts.filter((item) => {
+        const textMatch = !searchText || item.label.toLowerCase().includes(searchText) || item.description.toLowerCase().includes(searchText) || item.keywords.some((k) => k.toLowerCase().includes(searchText));
+        const keywordMatch = !keyword || item.keywords.includes(keyword);
+        const goldMatch = goldFilter === 'all' || (goldFilter === 'gold' && item.gold) || (goldFilter === 'regular' && !item.gold);
+        return textMatch && keywordMatch && goldMatch;
+      });
+
+      renderResults(filtered);
+    });
+
+    document.getElementById('btnResetSearch').addEventListener('click', () => {
+      document.getElementById('searchText').value = '';
+      document.getElementById('keywordFilter').value = '';
+      document.getElementById('goldFilter').value = 'all';
+      renderResults(savedScripts);
+      searchActionStatus.textContent = 'Select a script row to enable actions.';
+    });
+
+    document.getElementById('btnSaveTemplate').addEventListener('click', () => {
+      const label = document.getElementById('templateLabel').value.trim();
+      const description = document.getElementById('templateDesc').value.trim();
+      const gold = document.getElementById('goldStandard').checked;
+      const script = saveScript.textContent.trim();
+
+      if (!label || !description || !script || script.startsWith('# Reviewed script will appear here')) {
+        saveStatus.className = 'status-banner warning';
+        saveStatus.textContent = 'Please provide label, description, and reviewed script before saving.';
+        return;
+      }
+
+      const record = {
+        id: Date.now(),
+        label,
+        description,
+        keywords: keywords.length ? [...keywords] : ['Uncategorized'],
+        gold,
+        hasApi: optApi.checked,
+        hasCleanup: optCleanup.checked,
+        environment: document.getElementById('environment').value,
+        updatedAt: 'Just now',
+        apiSpec: optApi.checked ? apiOutput.textContent.trim() : '',
+        cleanupScript: optCleanup.checked ? cleanupOutput.textContent.trim() : '',
+        script
+      };
+
+      savedScripts.unshift(record);
+      currentFocusedDashboardId = record.id;
+      refreshKeywordFilter();
+      renderResults(savedScripts);
+      renderDashboard();
+      pushActivity('Script saved to library', `${label} was saved${gold ? ' as a gold-standard template' : ''}.`, 'GS');
+      updateAgentStepper('saved');
+      saveStatus.className = 'status-banner success';
+      saveStatus.innerHTML = `<b>Saved.</b> "${label}" is now available in the dashboard and script library.`;
+    });
+
+    function renderMetrics() {
+      document.getElementById('metricTotalScripts').textContent = String(savedScripts.length);
+      document.getElementById('metricGoldScripts').textContent = String(savedScripts.filter(item => item.gold).length);
+      const coverage = savedScripts.length ? Math.round((savedScripts.filter(item => item.hasCleanup).length / savedScripts.length) * 100) : 0;
+      document.getElementById('metricCleanupCoverage').textContent = `${coverage}%`;
+    }
+
+    function renderActivity() {
+      const container = document.getElementById('dashboardActivity');
+      container.innerHTML = '';
+      activityLog.forEach(item => {
+        const row = document.createElement('div');
+        row.className = 'timeline-item';
+        row.innerHTML = `
+          <div class="timeline-icon">${item.icon}</div>
+          <div class="timeline-body">
+            <h4>${item.title}</h4>
+            <p>${item.text}</p>
+          </div>`;
+        container.appendChild(row);
+      });
+    }
+
+    function openScriptFromDashboard(id) {
+      const item = savedScripts.find(script => script.id === id);
+      if (!item) return;
+      currentFocusedDashboardId = id;
+      document.getElementById('projectName').value = item.label;
+      document.getElementById('requestor').value = 'Loaded from saved library';
+      document.getElementById('templateLabel').value = item.label;
+      document.getElementById('templateDesc').value = item.description;
+      document.getElementById('goldStandard').checked = item.gold;
+      keywords = [...item.keywords];
+      renderKeywordChips();
+      terraformOutput.textContent = item.script;
+      reviewScript.textContent = item.script;
+      saveScript.textContent = item.script;
+      apiOutput.textContent = item.apiSpec || '# API spec not stored for this record.';
+      cleanupOutput.textContent = item.cleanupScript || '# Cleanup script not stored for this record.';
+      architectureCaption.textContent = 'Open the original request or generate again to refresh the architecture visualization for this script.';
+      addChatMessage('agent', `Loaded “${item.label}”. Ask me to adapt this script for a new project, tighten controls, or prepare it as a new gold-standard variant.`);
+      switchPage('page-workbench');
+      renderDashboard();
+    }
+
+    function renderDashboard() {
+      renderMetrics();
+      renderActivity();
+      const grid = document.getElementById('dashboardScriptGrid');
+      grid.innerHTML = '';
+      savedScripts.slice(0, 6).forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'script-card' + (currentFocusedDashboardId === item.id ? ' active-focus' : '');
+        card.innerHTML = `
+          <div class="btn-row" style="justify-content:space-between; align-items:flex-start;">
+            <div>
+              <h4>${item.label}</h4>
+              <p>${item.description}</p>
+            </div>
+            <span class="badge ${item.gold ? 'red' : 'info'}">${item.gold ? 'Gold Standard' : 'Saved Script'}</span>
+          </div>
+          <div class="chips">
+            ${item.keywords.map(k => `<span class="badge">${k}</span>`).join('')}
+          </div>
+          <div class="footnote">${item.environment || 'NA'} • ${item.updatedAt || 'Recently updated'} • ${item.hasCleanup ? 'Cleanup included' : 'No cleanup script'}</div>
+          <div class="btn-row">
+            <button class="btn btn-primary" data-open-id="${item.id}">Open in workbench</button>
+            <button class="btn btn-secondary" data-library-id="${item.id}">View in library</button>
+          </div>`;
+        grid.appendChild(card);
+      });
+
+      grid.querySelectorAll('[data-open-id]').forEach(btn => {
+        btn.addEventListener('click', () => openScriptFromDashboard(Number(btn.dataset.openId)));
+      });
+      grid.querySelectorAll('[data-library-id]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          switchPage('page-library');
+          const target = savedScripts.find(script => script.id === Number(btn.dataset.libraryId));
+          if (target) {
+            renderResults([target]);
+          }
+        });
+      });
+    }
+
+    renderServiceChips();
+    renderKeywordChips();
+    refreshKeywordFilter();
+    renderResults(savedScripts);
+    renderDashboard();
+    resetChat();
+    updateAgentStepper('idle');
+  </script>
+</body>
+</html>

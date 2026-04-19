@@ -11,7 +11,7 @@ services:
       - .env
     volumes:
       - ./backend:/app
-      - ${ADB_WALLET_DIR:-/opt/oracle/wallet}:/opt/oracle/wallet:ro
+      - ${ADB_WALLET_DIR_PROVISO:-/opt/oracle/wallet}:/opt/oracle/wallet:ro
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]

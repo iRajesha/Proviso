@@ -8,6 +8,7 @@ from backend.agents.agents import (
     make_reviewer_agent,
     make_cleanup_agent,
 )
+from backend.services.requirements_guard import ensure_requirements_clarity
 
 
 @dataclass
@@ -43,6 +44,8 @@ def _parse_review_output(text: str) -> tuple[str, str]:
 
 def run_crew(requirements: str, services: list[str]) -> GenerationResult:
     """Execute the full 3-agent sequential pipeline."""
+    ensure_requirements_clarity(requirements, services)
+
     services_str = ", ".join(services) if services else "not specified"
     prompt_context = (
         f"Infrastructure requirements:\n{requirements}\n\n"
@@ -109,3 +112,204 @@ def run_crew(requirements: str, services: list[str]) -> GenerationResult:
         change_summary=change_summary,
         cleanup_script=_extract_bash(raw_cleanup),
     )
+
+
+def run_refinement(
+    current_reviewed_terraform: str,
+    refinement_request: str,
+    services: list[str],
+) -> GenerationResult:
+    """
+    Refine existing reviewed Terraform based on a user change request.
+    Uses reviewer + cleanup agents to avoid full regeneration on each chat turn.
+    """
+    if not current_reviewed_terraform.strip():
+        raise ValueError("current_reviewed_terraform cannot be empty for refinement")
+    if not refinement_request.strip():
+        raise ValueError("refinement_request cannot be empty for refinement")
+
+    services_str = ", ".join(services) if services else "not specified"
+    reviewer = make_reviewer_agent()
+    cleanup_agent = make_cleanup_agent()
+
+    refine_task = Task(
+        description=(
+            "Refine the existing reviewed OCI Terraform according to the user's request, "
+            "while preserving resources not explicitly changed. Keep CIS OCI Benchmark "
+            "v2.0 compliance. Output exactly:\n"
+            "SECTION 1 - CORRECTED TERRAFORM: (full updated HCL)\n"
+            "SECTION 2 - CHANGE SUMMARY: (bullet list of updates)\n\n"
+            f"Services in scope: {services_str}\n\n"
+            "Current reviewed Terraform:\n"
+            f"```hcl\n{current_reviewed_terraform}\n```\n\n"
+            "User refinement request:\n"
+            f"{refinement_request}"
+        ),
+        expected_output=(
+            "SECTION 1 - CORRECTED TERRAFORM followed by SECTION 2 - CHANGE SUMMARY."
+        ),
+        agent=reviewer,
+    )
+
+    cleanup_task = Task(
+        description=(
+            "Based on the updated reviewed Terraform, produce a safe cleanup script "
+            "with dependency-aware destruction order, confirmation prompt, and logging."
+        ),
+        expected_output="A complete bash cleanup script in a ```bash code block.",
+        agent=cleanup_agent,
+        context=[refine_task],
+    )
+
+    crew = Crew(
+        agents=[reviewer, cleanup_agent],
+        tasks=[refine_task, cleanup_task],
+        process=Process.sequential,
+        verbose=True,
+    )
+    crew.kickoff()
+
+    raw_refined = str(refine_task.output) if refine_task.output else ""
+    raw_cleanup = str(cleanup_task.output) if cleanup_task.output else ""
+    reviewed_tf, change_summary = _parse_review_output(raw_refined)
+
+    return GenerationResult(
+        generated_terraform=_extract_hcl(current_reviewed_terraform),
+        reviewed_terraform=reviewed_tf,
+        change_summary=change_summary,
+        cleanup_script=_extract_bash(raw_cleanup),
+    )
+
+
+def run_generate_only(requirements: str, services: list[str]) -> str:
+    """
+    Run only generator agent and return Terraform draft.
+    """
+    ensure_requirements_clarity(requirements, services)
+    services_str = ", ".join(services) if services else "not specified"
+    prompt_context = (
+        f"Infrastructure requirements:\n{requirements}\n\n"
+        f"OCI services to use: {services_str}"
+    )
+
+    generator = make_generator_agent()
+    generate_task = Task(
+        description=(
+            f"Generate a complete OCI Terraform script for the following:\n\n{prompt_context}\n\n"
+            "Output ONLY valid HCL inside a single ```hcl code block."
+        ),
+        expected_output="Complete OCI Terraform HCL in a ```hcl code block.",
+        agent=generator,
+    )
+    crew = Crew(
+        agents=[generator],
+        tasks=[generate_task],
+        process=Process.sequential,
+        verbose=True,
+    )
+    crew.kickoff()
+    raw_gen = str(generate_task.output) if generate_task.output else ""
+    return _extract_hcl(raw_gen)
+
+
+def run_refinement_draft(
+    current_generated_terraform: str,
+    refinement_request: str,
+    services: list[str],
+) -> str:
+    """
+    Refine current Terraform draft without running reviewer/cleanup agents.
+    """
+    if not current_generated_terraform.strip():
+        raise ValueError("current_generated_terraform cannot be empty for refinement")
+    if not refinement_request.strip():
+        raise ValueError("refinement_request cannot be empty for refinement")
+
+    services_str = ", ".join(services) if services else "not specified"
+    generator = make_generator_agent()
+    refine_task = Task(
+        description=(
+            "Update the existing OCI Terraform draft based on the user refinement request. "
+            "Preserve existing resources unless explicitly changed. Output ONLY valid HCL "
+            "inside a single ```hcl code block.\n\n"
+            f"Services in scope: {services_str}\n\n"
+            "Current Terraform draft:\n"
+            f"```hcl\n{current_generated_terraform}\n```\n\n"
+            "Refinement request:\n"
+            f"{refinement_request}"
+        ),
+        expected_output="Updated OCI Terraform HCL in a ```hcl code block.",
+        agent=generator,
+    )
+    crew = Crew(
+        agents=[generator],
+        tasks=[refine_task],
+        process=Process.sequential,
+        verbose=True,
+    )
+    crew.kickoff()
+    raw_refined = str(refine_task.output) if refine_task.output else ""
+    return _extract_hcl(raw_refined)
+
+
+def run_review_only(terraform_code: str) -> tuple[str, str]:
+    """
+    Run reviewer agent only on current Terraform and return (reviewed_tf, summary).
+    """
+    if not terraform_code.strip():
+        raise ValueError("terraform_code cannot be empty for review")
+
+    reviewer = make_reviewer_agent()
+    review_task = Task(
+        description=(
+            "Review the provided Terraform for CIS OCI Benchmark v2.0 compliance. "
+            "Fix violations and output exactly:\n"
+            "SECTION 1 - CORRECTED TERRAFORM: (full HCL)\n"
+            "SECTION 2 - CHANGE SUMMARY: (bullet list)\n\n"
+            "Terraform to review:\n"
+            f"```hcl\n{terraform_code}\n```"
+        ),
+        expected_output=(
+            "SECTION 1 - CORRECTED TERRAFORM followed by SECTION 2 - CHANGE SUMMARY."
+        ),
+        agent=reviewer,
+    )
+    crew = Crew(
+        agents=[reviewer],
+        tasks=[review_task],
+        process=Process.sequential,
+        verbose=True,
+    )
+    crew.kickoff()
+    raw_review = str(review_task.output) if review_task.output else ""
+    return _parse_review_output(raw_review)
+
+
+def run_cleanup_only(terraform_code: str) -> str:
+    """
+    Run cleanup agent only and return cleanup script.
+    """
+    if not terraform_code.strip():
+        raise ValueError("terraform_code cannot be empty for cleanup generation")
+
+    cleanup_agent = make_cleanup_agent()
+    cleanup_task = Task(
+        description=(
+            "Using the provided Terraform code as reference, write a safe bash cleanup "
+            "script that destroys resources in dependency-aware order with confirmation "
+            "prompt and logging.\n\n"
+            "Terraform input:\n"
+            f"```hcl\n{terraform_code}\n```"
+        ),
+        expected_output="A complete bash cleanup script in a ```bash code block.",
+        agent=cleanup_agent,
+    )
+    crew = Crew(
+        agents=[cleanup_agent],
+        tasks=[cleanup_task],
+        process=Process.sequential,
+        verbose=True,
+    )
+    crew.kickoff()
+    raw_cleanup = str(cleanup_task.output) if cleanup_task.output else ""
+    return _extract_bash(raw_cleanup)
