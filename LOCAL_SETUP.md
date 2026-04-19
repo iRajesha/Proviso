@@ -11,11 +11,12 @@
 3. [OCI Credentials](#3-oci-credentials)
 4. [Oracle ADB 26ai Setup](#4-oracle-adb-26ai-setup)
 5. [Backend (FastAPI)](#5-backend-fastapi)
-6. [Run with Docker Compose](#6-run-with-docker-compose)
-7. [Oracle APEX Setup](#7-oracle-apex-setup)
-8. [Verify Everything Works](#8-verify-everything-works)
-9. [Run Tests](#9-run-tests)
-10. [Troubleshooting](#10-troubleshooting)
+6. [Frontend (React)](#6-frontend-react)
+7. [Run with Docker Compose](#7-run-with-docker-compose)
+8. [Oracle APEX Setup](#8-oracle-apex-setup)
+9. [Verify Everything Works](#9-verify-everything-works)
+10. [Run Tests](#10-run-tests)
+11. [Troubleshooting](#11-troubleshooting)
 
 ---
 
@@ -51,6 +52,11 @@ cp .env.example .env
 
 Open `.env` in your editor and fill in every value — see Section 3 and 4 for what each needs.
 
+Minimum values to set before first run:
+- `OCI_COMPARTMENT_ID`, `OCI_CONFIG_PROFILE`, `OCI_GENAI_ENDPOINT`, `OCI_GENAI_MODEL_ID`
+- `ADB_DSN_PROVISO`, `ADB_USER_PROVISO`, `ADB_PASSWORD_PROVISO`, `ADB_WALLET_DIR_PROVISO`
+- `API_PORT=8000`, `CORS_ORIGINS=http://localhost:5173`
+
 ---
 
 ## 3. OCI Credentials
@@ -83,10 +89,11 @@ OCI_COMPARTMENT_ID=ocid1.compartment.oc1..xxxxx  # target compartment
 OCI_TENANCY_ID=ocid1.tenancy.oc1..xxxxx          # from Profile → Tenancy
 OCI_GENAI_ENDPOINT=https://inference.generativeai.us-chicago-1.oci.oraclecloud.com/20231130
 OCI_GENAI_MODEL_ID=cohere.command-r-plus
-OCI_GENAI_API_KEY=your_api_key_here              # not used directly; SDK reads ~/.oci/config
+OCI_CONFIG_FILE=~/.oci/config                     # OCI SDK credential source
+OCI_CONFIG_PROFILE=your_oci_profile_name          # profile section inside config file
 ```
 
-> **Note:** The OCI Python SDK reads `~/.oci/config` automatically when running locally. `OCI_GENAI_API_KEY` is only needed for cloud deployments without instance principal.
+> **Note:** The backend now authenticates OCI GenAI via OCI SDK signing credentials (config file/profile). `OCI_GENAI_API_KEY` is not required for local runs.
 
 ### 3c. Verify OCI GenAI access
 
@@ -128,10 +135,10 @@ unzip /tmp/proviso_wallet.zip -d ~/oracle/wallet
 ### 4c. `.env` ADB values
 
 ```env
-ADB_DSN=proviso_high          # from tnsnames.ora in wallet (use _high, _medium, or _low)
-ADB_USER=WORKBENCH_USER
-ADB_PASSWORD=your_adb_password
-ADB_WALLET_DIR=/Users/yourname/oracle/wallet   # absolute path to wallet folder
+ADB_DSN_PROVISO=proviso_high          # from tnsnames.ora in wallet (use _high, _medium, or _low)
+ADB_USER_PROVISO=WORKBENCH_USER
+ADB_PASSWORD_PROVISO=your_adb_password
+ADB_WALLET_DIR_PROVISO=/Users/yourname/oracle/wallet   # absolute path to wallet folder
 ```
 
 ### 4d. Create DB user and run schema
@@ -180,7 +187,33 @@ END;
 
 ## 5. Backend (FastAPI)
 
-### 5a. Create virtual environment
+### 5a. Verify required backend config
+
+Make sure these values are present in `.env`:
+
+```env
+# OCI (required)
+OCI_REGION=us-chicago-1
+OCI_COMPARTMENT_ID=ocid1.compartment.oc1..xxxxx
+OCI_TENANCY_ID=ocid1.tenancy.oc1..xxxxx
+OCI_CONFIG_FILE=~/.oci/config
+OCI_CONFIG_PROFILE=your_oci_profile_name
+OCI_GENAI_ENDPOINT=https://inference.generativeai.us-chicago-1.oci.oraclecloud.com/20231130
+OCI_GENAI_MODEL_ID=cohere.command-r-plus
+
+# ADB (required for persistence/search; generation still works if DB logging is unavailable)
+ADB_DSN_PROVISO=proviso_high
+ADB_USER_PROVISO=WORKBENCH_USER
+ADB_PASSWORD_PROVISO=your_adb_password
+ADB_WALLET_DIR_PROVISO=/Users/yourname/oracle/wallet
+
+# App runtime (recommended)
+API_PORT=8000
+LOG_LEVEL=INFO
+CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+```
+
+### 5b. Create virtual environment
 
 ```bash
 cd backend
@@ -189,18 +222,20 @@ source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### 5b. Set PYTHONPATH
+### 5c. Set PYTHONPATH
 
 ```bash
-# From the repo root (not backend/)
+# If you're currently in backend/, move back first
+cd ..
+source backend/.venv/bin/activate
 export PYTHONPATH=$(pwd)
 ```
 
-### 5c. Start the API server
+### 5d. Start the API server
 
 ```bash
 # From repo root
-uvicorn backend.main:app --reload --port 8000
+uvicorn backend.main:app --reload --port ${API_PORT:-8000}
 ```
 
 You should see:
@@ -209,7 +244,7 @@ INFO:     Uvicorn running on http://0.0.0.0:8000
 INFO:     Application startup complete.
 ```
 
-### 5d. Open API docs
+### 5e. Open API docs
 
 - Swagger UI: http://localhost:8000/docs
 - ReDoc:       http://localhost:8000/redoc
@@ -217,7 +252,50 @@ INFO:     Application startup complete.
 
 ---
 
-## 6. Run with Docker Compose
+## 6. Frontend (React)
+
+### 6a. Install dependencies
+
+```bash
+# From repo root
+cd frontend
+npm install
+```
+
+### 6b. Start frontend dev server
+
+```bash
+# From frontend/
+npm run dev
+```
+
+Frontend URL:
+- http://localhost:5173
+
+Notes:
+- Frontend uses Vite proxy to call backend at `http://localhost:8000`.
+- Keep backend and frontend running in separate terminals.
+
+### 6c. Recommended startup sequence (two terminals)
+
+Terminal 1 (backend):
+```bash
+cd /path/to/Proviso
+source backend/.venv/bin/activate
+export PYTHONPATH=$(pwd)
+uvicorn backend.main:app --reload --port 8000
+```
+
+Terminal 2 (frontend):
+```bash
+cd /path/to/Proviso/frontend
+npm install
+npm run dev
+```
+
+---
+
+## 7. Run with Docker Compose
 
 If you prefer containers over a local Python install:
 
@@ -235,21 +313,21 @@ docker compose up -d --build
 docker compose logs -f api
 ```
 
-> **Wallet volume:** Update `ADB_WALLET_DIR` in `.env` to an absolute path on your host.
+> **Wallet volume:** Update `ADB_WALLET_DIR_PROVISO` in `.env` to an absolute path on your host.
 > Docker Compose mounts it read-only into the container at `/opt/oracle/wallet`.
 
 ---
 
-## 7. Oracle APEX Setup
+## 8. Oracle APEX Setup
 
-### 7a. Create APEX workspace
+### 8a. Create APEX workspace
 
 In OCI Console → **APEX** → your ADB → **Launch APEX**:
 1. Log in as ADMIN
 2. Create a new workspace: `PROVISO`
 3. Assign it to schema `WORKBENCH_USER`
 
-### 7b. Create a new app
+### 8b. Create a new app
 
 1. **App Builder → Create → New Application**
    - Name: `Proviso`
@@ -257,7 +335,7 @@ In OCI Console → **APEX** → your ADB → **Launch APEX**:
 2. Create **Page 1** — Generate Infrastructure
 3. Create **Page 2** — Gold Script Library
 
-### 7c. Upload static files
+### 8c. Upload static files
 
 **Shared Components → Static Application Files → Upload:**
 - `apex/js/proviso.js`
@@ -269,14 +347,14 @@ Reference them in your page's **JavaScript** and **CSS** sections:
 #APP_FILES#proviso.css
 ```
 
-### 7d. Add Mermaid.js CDN
+### 8d. Add Mermaid.js CDN
 
 In **Shared Components → User Interface Attributes → JavaScript → File URLs**:
 ```
 https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js
 ```
 
-### 7e. Register AJAX callbacks
+### 8e. Register AJAX callbacks
 
 For each page, go to **Processing** tab and add an **AJAX Callback** process. 
 Copy the PL/SQL from `apex/plsql_callbacks.sql` — one process per block:
@@ -288,39 +366,70 @@ Copy the PL/SQL from `apex/plsql_callbacks.sql` — one process per block:
 | `SEARCH_SCRIPTS` | 2 | Block 3 |
 | `GET_SCRIPT` | 2 | Block 4 |
 
-### 7f. Update API base URL
+### 8f. Update API base URL
 
 In `plsql_callbacks.sql` the API URL defaults to `http://localhost:8000`.  
 If your FastAPI runs on a different host/port, do a find-replace before pasting into APEX.
 
 ---
 
-## 8. Verify Everything Works
+## 9. Verify Everything Works
 
 ```bash
-# 1. Health check
+# 1. Backend health check
 curl http://localhost:8000/api/v1/health
 # Expected: {"status":"ok","version":"1.0.0"}
 
-# 2. Generate Terraform (requires OCI GenAI access)
-curl -s -X POST http://localhost:8000/api/v1/generate \
+# 2. Create chat session
+curl -s -X POST http://localhost:8000/api/v1/chat/sessions \
   -H "Content-Type: application/json" \
-  -d '{"requirements":"Create a VCN with two subnets and an ADB","services":["vcn","adb"]}' \
+  -d '{"services":["Networking","Compute"]}' \
   | python -m json.tool
 
-# 3. Diagram only (no LLM needed)
+# Copy session_id from output, then:
+SESSION_ID=<paste_session_id_here>
+
+# 3. Generate Terraform draft (generator only)
+curl -s -X POST http://localhost:8000/api/v1/chat/sessions/$SESSION_ID/messages \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message":"Create a production setup in ap-hyderabad-1 with private subnet and one compute instance. Allow SSH from 10.10.0.0/24 only.",
+    "intent":"generate"
+  }' \
+  | python -m json.tool
+
+# 4. Run review explicitly (reviewer agent)
+curl -s -X POST http://localhost:8000/api/v1/chat/sessions/$SESSION_ID/messages \
+  -H "Content-Type: application/json" \
+  -d '{"message":"","intent":"review"}' \
+  | python -m json.tool
+
+# 5. Run cleanup explicitly (cleanup agent)
+curl -s -X POST http://localhost:8000/api/v1/chat/sessions/$SESSION_ID/messages \
+  -H "Content-Type: application/json" \
+  -d '{"message":"","intent":"cleanup"}' \
+  | python -m json.tool
+
+# 6. Diff endpoint smoke test
 curl -s -X POST http://localhost:8000/api/v1/review/diff \
   -H "Content-Type: application/json" \
   -d '{"original":"resource \"oci_core_vcn\" \"main\" {}","modified":"resource \"oci_core_vcn\" \"main\" {\n  cidr_block = \"10.0.0.0/16\"\n}"}' \
   | python -m json.tool
 ```
 
+Frontend check:
+- Open `http://localhost:5173`
+- Confirm chat loads a session id and buttons:
+  - `Generate Draft`
+  - `Run Review`
+  - `Generate Cleanup`
+
 ---
 
-## 9. Run Tests
+## 10. Run Tests
 
 ```bash
-# From repo root with venv active
+# Backend tests (from repo root with backend venv active)
 export PYTHONPATH=$(pwd)
 cd backend
 pytest tests/ -v
@@ -338,9 +447,15 @@ tests/test_diff_service.py::test_no_diff_for_identical  PASSED
 
 > Tests that call CrewAI (`test_generate_route.py`) are mocked and don't require OCI access.
 
+```bash
+# Frontend build check
+cd ../frontend
+npm run build
+```
+
 ---
 
-## 10. Troubleshooting
+## 11. Troubleshooting
 
 ### `ModuleNotFoundError: No module named 'backend'`
 ```bash
@@ -350,17 +465,23 @@ uvicorn backend.main:app --reload
 ```
 
 ### `oracledb.DatabaseError: ORA-01017` (wrong password)
-- Double-check `ADB_PASSWORD` in `.env`
-- Ensure `ADB_USER` matches the DB user you created
+- Double-check `ADB_PASSWORD_PROVISO` in `.env`
+- Ensure `ADB_USER_PROVISO` matches the DB user you created
 
 ### `oracledb.DatabaseError: DPY-4011` (wallet not found)
-- Set `ADB_WALLET_DIR` to absolute path (no `~`)
+- Set `ADB_WALLET_DIR_PROVISO` to absolute path (no `~`)
 - Ensure `sqlnet.ora` and `tnsnames.ora` exist in that directory
 
-### `LLMResponseError` / `litellm` errors
+### OCI GenAI call errors
 - Confirm OCI GenAI service is available in your region: `us-chicago-1` or `eu-frankfurt-1`
-- Check `~/.oci/config` has correct `[DEFAULT]` profile
+- Check `~/.oci/config` has the profile named in `.env` as `OCI_CONFIG_PROFILE`
 - Verify the model ID: `cohere.command-r-plus` (exact string)
+- Ensure `OCI_COMPARTMENT_ID` is set in `.env`
+
+### Frontend cannot call backend (`Failed to fetch` / network error)
+- Make sure backend is running on `http://localhost:8000`
+- Make sure frontend is running via Vite (`npm run dev` in `frontend/`)
+- If you changed backend port, update `frontend/vite.config.js` proxy target
 
 ### Generation timeout in APEX (30s limit)
 - Increase APEX Ajax timeout: in the AJAX Callback process, add to the `apex.server.process` call:
@@ -383,6 +504,7 @@ volumes:
 | Command | Purpose |
 |---------|---------|
 | `uvicorn backend.main:app --reload` | Start API (dev) |
+| `cd frontend && npm run dev` | Start React frontend |
 | `docker compose up --build` | Start via Docker |
 | `pytest tests/ -v` | Run test suite |
 | `curl localhost:8000/api/v1/health` | Health check |

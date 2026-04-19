@@ -213,10 +213,11 @@ OCI_COMPARTMENT_ID=ocid1.compartment.oc1..xxxxx
 OCI_TENANCY_ID=ocid1.tenancy.oc1..xxxxx
 OCI_GENAI_ENDPOINT=https://inference.generativeai.us-chicago-1.oci.oraclecloud.com/20231130
 OCI_GENAI_MODEL_ID=cohere.command-r-plus
-OCI_GENAI_API_KEY=your_api_key_here
-ADB_DSN=your_adb_connection_string
-ADB_USER=WORKBENCH_USER
-ADB_PASSWORD=stored_in_vault
+OCI_CONFIG_FILE=~/.oci/config
+OCI_CONFIG_PROFILE=your_oci_profile_name
+ADB_DSN_PROVISO=your_adb_connection_string
+ADB_USER_PROVISO=WORKBENCH_USER
+ADB_PASSWORD_PROVISO=stored_in_vault
 API_PORT=8000
 LOG_LEVEL=INFO
 ```
@@ -268,7 +269,7 @@ See [AGENT.md](./AGENT.md) for the full DDL. High-level steps:
 | Method | Endpoint | Purpose |
 |--------|----------|---------|
 | `GET` | `/api/v1/health` | Health check |
-| `POST` | `/api/v1/generate` | Run the full 3-agent pipeline (generate → review → cleanup) |
+| `POST` | `/api/v1/generate` | Generate Terraform draft only (review/cleanup are explicit chat actions) |
 | `POST` | `/api/v1/review` | Apply human feedback and re-run the review agent |
 | `POST` | `/api/v1/scripts/save` | Save a reviewed script to the Gold Standard Library |
 | `GET` | `/api/v1/scripts/search` | Hybrid search the Gold Library (vector + full-text) |

@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Proviso Wireframe - Chat and Terraform Editor</title>
+  <style>
+    :root {
+      --rw-bg: #f5f6f7;
+      --rw-surface: #ffffff;
+      --rw-surface-soft: #fbfcfd;
+      --rw-border: #d6dbe3;
+      --rw-text: #1b1f24;
+      --rw-muted: #5a6572;
+      --rw-brand: #c74634;
+      --rw-brand-hover: #aa3b2c;
+      --rw-brand-soft: #fdf0ee;
+      --rw-shadow-sm: 0 2px 6px rgba(16, 24, 40, 0.08);
+      --rw-shadow-md: 0 14px 30px rgba(16, 24, 40, 0.1);
+      --rw-radius: 14px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Oracle Sans", "Public Sans", "Segoe UI", sans-serif;
+      color: var(--rw-text);
+      background:
+        radial-gradient(980px 460px at 5% -10%, #fff1ee 0%, transparent 58%),
+        radial-gradient(760px 320px at 100% 0%, #edf4fb 0%, transparent 64%),
+        var(--rw-bg);
+      min-height: 100vh;
+    }
+
+    .page {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .header h1 {
+      margin: 4px 0 0;
+      font-size: clamp(1.05rem, 2.8vw, 1.5rem);
+    }
+
+    .kicker {
+      margin: 0;
+      color: var(--rw-brand);
+      text-transform: uppercase;
+      font-size: 0.74rem;
+      letter-spacing: 0.1em;
+      font-weight: 700;
+    }
+
+    .btn {
+      border: none;
+      background: var(--rw-brand);
+      color: #fff;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: var(--rw-shadow-sm);
+    }
+
+    .btn:hover { background: var(--rw-brand-hover); }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(290px, 0.95fr) minmax(380px, 1.3fr);
+      gap: 14px;
+    }
+
+    .panel {
+      background: var(--rw-surface);
+      border: 1px solid var(--rw-border);
+      border-radius: var(--rw-radius);
+      box-shadow: var(--rw-shadow-sm);
+      min-height: 76vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .panel-head {
+      padding: 14px 14px;
+      border-bottom: 1px solid var(--rw-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(180deg, #ffffff 0%, #fbfcfd 100%);
+    }
+
+    .panel-head h2 {
+      margin: 0;
+      font-size: 0.98rem;
+    }
+
+    .pill {
+      font-size: 0.73rem;
+      font-weight: 600;
+      border-radius: 999px;
+      padding: 4px 8px;
+      border: 1px solid #f1d3ce;
+      background: var(--rw-brand-soft);
+      color: var(--rw-brand);
+    }
+
+    .chat-list {
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-height: 320px;
+      overflow: auto;
+      background: linear-gradient(180deg, #fbfcfe 0%, #ffffff 65%);
+    }
+
+    .msg {
+      max-width: 90%;
+      border: 1px solid var(--rw-border);
+      border-radius: 12px;
+      padding: 10px 11px;
+      background: var(--rw-surface-soft);
+    }
+
+    .msg.assistant {
+      align-self: flex-start;
+      background: #f4f8ff;
+      border-color: #d8e2f0;
+    }
+
+    .msg.user {
+      align-self: flex-end;
+      background: #fff8f7;
+      border-color: #f2d2cb;
+    }
+
+    .msg .role {
+      margin: 0 0 3px;
+      color: var(--rw-muted);
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-weight: 700;
+    }
+
+    .msg p {
+      margin: 0;
+      line-height: 1.45;
+      font-size: 0.92rem;
+    }
+
+    .quick-row {
+      display: flex;
+      gap: 7px;
+      flex-wrap: wrap;
+      padding: 0 14px 12px;
+    }
+
+    .chip {
+      border: 1px solid var(--rw-border);
+      background: #fff;
+      color: var(--rw-text);
+      border-radius: 999px;
+      padding: 6px 9px;
+      font-size: 0.75rem;
+      cursor: pointer;
+    }
+
+    .composer {
+      margin-top: auto;
+      border-top: 1px solid var(--rw-border);
+      padding: 12px;
+      background: #fcfdff;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 9px;
+    }
+
+    .composer textarea {
+      width: 100%;
+      min-height: 76px;
+      border: 1px solid var(--rw-border);
+      border-radius: 10px;
+      resize: vertical;
+      padding: 10px;
+      font: inherit;
+      color: var(--rw-text);
+      background: #fff;
+    }
+
+    .toolbar {
+      border-bottom: 1px solid var(--rw-border);
+      background: #fdfefe;
+      padding: 9px 10px;
+      display: flex;
+      gap: 7px;
+      flex-wrap: wrap;
+    }
+
+    .tab {
+      border: 1px solid var(--rw-border);
+      border-radius: 8px;
+      padding: 5px 8px;
+      font-size: 0.77rem;
+      background: #fff;
+      color: var(--rw-text);
+    }
+
+    .code {
+      width: 100%;
+      border: none;
+      border-bottom: 1px solid var(--rw-border);
+      min-height: 440px;
+      resize: vertical;
+      padding: 12px;
+      font-family: "JetBrains Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+      font-size: 0.84rem;
+      line-height: 1.42;
+      background: #f8fafc;
+      color: #17212b;
+    }
+
+    .changes {
+      padding: 12px 14px;
+    }
+
+    .changes h3 {
+      margin: 0 0 8px;
+      font-size: 0.79rem;
+      color: var(--rw-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .changes ul {
+      margin: 0;
+      padding-left: 18px;
+      font-size: 0.88rem;
+      display: grid;
+      gap: 5px;
+    }
+
+    @media (max-width: 1024px) {
+      .layout { grid-template-columns: 1fr; }
+      .panel { min-height: 58vh; }
+      .composer { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="header">
+      <div>
+        <p class="kicker">Proviso Wireframe</p>
+        <h1>Infrastructure Chat + Terraform Editor</h1>
+      </div>
+      <button class="btn" type="button">Generate Draft</button>
+    </header>
+
+    <main class="layout">
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Requirements Chat</h2>
+          <span class="pill">Assistant</span>
+        </div>
+
+        <div class="chat-list" id="chatList">
+          <article class="msg assistant">
+            <p class="role">Solution</p>
+            <p>Describe your OCI infrastructure requirement. I will suggest updates and keep the Terraform draft aligned.</p>
+          </article>
+          <article class="msg user">
+            <p class="role">You</p>
+            <p>Create one VCN, one public web subnet, and one private app subnet in ap-hyderabad-1.</p>
+          </article>
+          <article class="msg assistant">
+            <p class="role">Solution</p>
+            <p>Draft updated. Next, specify ingress rules and whether compute instances should avoid public IP assignment.</p>
+          </article>
+        </div>
+
+        <div class="quick-row">
+          <button class="chip" type="button">Add NSG for HTTPS</button>
+          <button class="chip" type="button">Restrict SSH to office CIDR</button>
+          <button class="chip" type="button">Attach private route table</button>
+        </div>
+
+        <div class="composer">
+          <textarea id="messageInput" placeholder="Ask for changes. Example: add a load balancer and allow HTTPS only."></textarea>
+          <button class="btn" type="button" id="sendBtn">Send</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Terraform Editor</h2>
+          <span class="pill" id="lineCount">31 lines</span>
+        </div>
+
+        <div class="toolbar">
+          <span class="tab">main.tf</span>
+          <span class="tab">variables.tf</span>
+          <span class="tab">outputs.tf</span>
+          <span class="tab">validate</span>
+        </div>
+
+        <textarea class="code" id="tfEditor" spellcheck="false">terraform {
+  required_version = ">= 1.5.0"
+  required_providers {
+    oci = {
+      source  = "oracle/oci"
+      version = "~> 5.0"
+    }
+  }
+}
+
+provider "oci" {
+  region = "ap-hyderabad-1"
+}
+
+resource "oci_core_vcn" "main" {
+  compartment_id = var.compartment_ocid
+  display_name   = "proviso-vcn"
+  cidr_block     = "10.0.0.0/16"
+}
+
+resource "oci_core_subnet" "public_web" {
+  compartment_id = var.compartment_ocid
+  vcn_id         = oci_core_vcn.main.id
+  display_name   = "public-web-subnet"
+  cidr_block     = "10.0.1.0/24"
+  prohibit_public_ip_on_vnic = false
+}</textarea>
+
+        <div class="changes">
+          <h3>Recent changes</h3>
+          <ul id="changesList">
+            <li>Initialized base VCN and public subnet draft.</li>
+            <li>Prepared editor for iterative chat-driven updates.</li>
+          </ul>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const chatList = document.getElementById("chatList");
+    const messageInput = document.getElementById("messageInput");
+    const sendBtn = document.getElementById("sendBtn");
+    const tfEditor = document.getElementById("tfEditor");
+    const lineCount = document.getElementById("lineCount");
+    const changesList = document.getElementById("changesList");
+
+    function refreshLineCount() {
+      lineCount.textContent = tfEditor.value.split("\n").length + " lines";
+    }
+
+    function addMessage(role, text) {
+      const article = document.createElement("article");
+      article.className = "msg " + role;
+      article.innerHTML =
+        '<p class="role">' + (role === "assistant" ? "Solution" : "You") + "</p>" +
+        "<p>" + text + "</p>";
+      chatList.appendChild(article);
+      chatList.scrollTop = chatList.scrollHeight;
+    }
+
+    function addChange(text) {
+      const li = document.createElement("li");
+      li.textContent = text;
+      changesList.prepend(li);
+      while (changesList.children.length > 6) {
+        changesList.removeChild(changesList.lastChild);
+      }
+    }
+
+    sendBtn.addEventListener("click", function () {
+      const text = messageInput.value.trim();
+      if (!text) return;
+
+      addMessage("user", text);
+      addMessage("assistant", "Captured. This is a wireframe response; final integration will call backend APIs.");
+      addChange("Captured requirement update: " + text);
+      messageInput.value = "";
+    });
+
+    tfEditor.addEventListener("input", refreshLineCount);
+    refreshLineCount();
+  </script>
+</body>
+</html>

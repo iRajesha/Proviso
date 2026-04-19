@@ -271,9 +271,9 @@ def get_embedding_fn():
     import oracledb
 
     conn = oracledb.connect(
-        dsn=os.getenv("ADB_DSN"),
-        user=os.getenv("ADB_USER"),
-        password=os.getenv("ADB_PASSWORD")
+        dsn=os.getenv("ADB_DSN_PROVISO"),
+        user=os.getenv("ADB_USER_PROVISO"),
+        password=os.getenv("ADB_PASSWORD_PROVISO")
     )
     cursor = conn.cursor()
 
